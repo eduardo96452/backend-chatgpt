@@ -36,7 +36,7 @@ app.post('/api/chatgpt', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4', // Cambia a 'gpt-4.77.3' si estás usando esa versión exacta
+        model: 'gpt-4o', // Cambia a 'gpt-4.77.3' si estás usando esa versión exacta
         messages: [
           { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
           { role: 'user', content: prompt }

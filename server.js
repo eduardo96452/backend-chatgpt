@@ -21,15 +21,15 @@ app.post('/api/chatgpt', async (req, res) => {
 
   try {
     // Construye el prompt para OpenAI
-    const prompt = `
-      A partir de la siguiente información:
+    const prompt = `      
+      1. Usa los siguientes datos para elaborar un objetivo:
       - Título de la revisión: ${title}
       - Metodología de revisión: ${methodology}
-      - Descripción breve:: ${description}
-
-      Redacta un objetivo concreto y conciso para la revisión sistemática de literatura.
-      Escribe el objetivo en un tono académico y en una o dos frases.
-      El resultado final debe ser un texto fluido, sin enumeraciones ni viñetas.
+      - Descripción breve: ${description}
+      2. Escribe el objetivo usando la fórmula:
+      (verbo en infinitivo) + (qué cosa) + (cómo) + (para qué)
+      3. Tu respuesta debe resultar en una sola frase en tono académico.
+      4. No incluyas enumeraciones ni viñetas; la frase final debe ser fluida y concisa.
     `;
 
     // Llama a la API de OpenAI

@@ -41,7 +41,7 @@ app.post('/api/chatgpt', async (req, res) => {
           { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7
+        temperature: 1.0
       },
       {
         headers: {

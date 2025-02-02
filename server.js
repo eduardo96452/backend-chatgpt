@@ -67,7 +67,7 @@ app.post('/api/methodology-structure', async (req, res) => {
     return res.status(400).json({ error: 'Faltan datos en la solicitud' });
   }
 
-  // Definir las estructuras de las metodologías
+  // Definir las estructuras base de cada metodología
   const methodologies = {
     PICO: {
       P: "Población o problema",
@@ -106,13 +106,57 @@ app.post('/api/methodology-structure', async (req, res) => {
     return res.status(400).json({ error: 'Metodología no reconocida' });
   }
 
-  // Responder con la estructura de la metodología seleccionada
-  res.status(200).json({
-    methodology: methodology.toUpperCase(),
-    title,
-    objective,
-    structure: selectedMethodology
-  });
+  // 🔹 **Prompt para OpenAI**
+  const prompt = `
+    Eres un experto en investigación académica y metodología científica.
+    Genera la estructura de la metodología "${methodology}" utilizando la siguiente información:
+
+    - Título del estudio: ${title}
+    - Objetivo: ${objective}
+
+    La metodología sigue la estructura: 
+    ${JSON.stringify(selectedMethodology, null, 2)}
+
+    **Desarrolla cada uno de estos componentes utilizando la información dada.**
+    - Usa explicaciones claras y concisas en tono académico.
+    - No agregues contenido inventado, solo basado en la información proporcionada.
+  `;
+
+  try {
+    // 🔹 **Llamada a OpenAI**
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en metodología de investigación académica.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    // 🔹 **Extraer respuesta de OpenAI**
+    const structuredResponse = response.data.choices[0].message.content.trim();
+
+    // Responder con la estructura + la respuesta generada por OpenAI
+    res.status(200).json({
+      methodology: methodology.toUpperCase(),
+      title,
+      objective,
+      structure: selectedMethodology,
+      generated_structure: structuredResponse
+    });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
 });
 
 // Inicia el servidor

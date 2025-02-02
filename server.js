@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Ruta para manejar solicitudes a OpenAI
+// Ruta para manejar solicitudes a OpenAI.....................
 app.post('/api/chatgpt', async (req, res) => {
   const { title, methodology, description } = req.body;
 
@@ -58,6 +58,61 @@ app.post('/api/chatgpt', async (req, res) => {
     console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
+});
+
+app.post('/api/methodology-structure', async (req, res) => {
+  const { methodology, title, objective } = req.body;
+
+  if (!methodology || !title || !objective) {
+    return res.status(400).json({ error: 'Faltan datos en la solicitud' });
+  }
+
+  // Definir las estructuras de las metodologías
+  const methodologies = {
+    PICO: {
+      P: "Población o problema",
+      I: "Intervención",
+      C: "Comparación",
+      O: "Outcome (resultado)"
+    },
+    PICOC: {
+      P: "Población",
+      I: "Intervención",
+      C: "Comparación",
+      O: "Outcome (resultado)",
+      C2: "Contexto"
+    },
+    PICOTT: {
+      P: "Población",
+      I: "Intervención",
+      C: "Comparación",
+      O: "Outcome (resultado)",
+      T: "Tipo de pregunta",
+      T2: "Tipo de estudio"
+    },
+    SPICE: {
+      S: "Setting (entorno)",
+      P: "Población o perspectiva",
+      I: "Intervención",
+      C: "Comparación",
+      E: "Evaluación"
+    }
+  };
+
+  // Verifica si la metodología existe en la lista
+  const selectedMethodology = methodologies[methodology.toUpperCase()];
+
+  if (!selectedMethodology) {
+    return res.status(400).json({ error: 'Metodología no reconocida' });
+  }
+
+  // Responder con la estructura de la metodología seleccionada
+  res.status(200).json({
+    methodology: methodology.toUpperCase(),
+    title,
+    objective,
+    structure: selectedMethodology
+  });
 });
 
 // Inicia el servidor

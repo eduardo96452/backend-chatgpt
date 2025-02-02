@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Ruta para manejar solicitudes a OpenAI.....................
-app.post('/api/chatgpt', async (req, res) => {
+// Ruta para manejar solicitudes para el objetivo.....................
+app.post('/api/generate-objetive', async (req, res) => {
   const { title, methodology, description } = req.body;
 
   if (!title || !methodology || !description) {
@@ -60,6 +60,7 @@ app.post('/api/chatgpt', async (req, res) => {
   }
 });
 
+// Ruta para manejar solicitudes para la metodología de estructura
 app.post('/api/methodology-structure', async (req, res) => {
   const { methodology, title, objective } = req.body;
 
@@ -67,69 +68,244 @@ app.post('/api/methodology-structure', async (req, res) => {
     return res.status(400).json({ error: 'Faltan datos en la solicitud' });
   }
 
-  // Definir las estructuras base de cada metodología
   const methodologies = {
-    PICO: {
-      P: "Población o problema",
-      I: "Intervención",
-      C: "Comparación",
-      O: "Outcome (resultado)"
-    },
-    PICOC: {
-      P: "Población",
-      I: "Intervención",
-      C: "Comparación",
-      O: "Outcome (resultado)",
-      C2: "Contexto"
-    },
-    PICOTT: {
-      P: "Población",
-      I: "Intervención",
-      C: "Comparación",
-      O: "Outcome (resultado)",
-      T: "Tipo de pregunta",
-      T2: "Tipo de estudio"
-    },
-    SPICE: {
-      S: "Setting (entorno)",
-      P: "Población o perspectiva",
-      I: "Intervención",
-      C: "Comparación",
-      E: "Evaluación"
-    }
+    PICO: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome" },
+    PICOC: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", C2: "Contexto" },
+    PICOTT: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", T: "Tipo de pregunta", T2: "Tipo de estudio" },
+    SPICE: { S: "Setting", P: "Población", I: "Intervención", C: "Comparación", E: "Evaluación" }
   };
 
-  // Verifica si la metodología existe en la lista
-  const selectedMethodology = methodologies[methodology.toUpperCase()];
-
-  if (!selectedMethodology) {
+  if (!methodologies[methodology.toUpperCase()]) {
     return res.status(400).json({ error: 'Metodología no reconocida' });
   }
 
-  // 🔹 **Prompt para OpenAI**
   const prompt = `
-    Eres un experto en investigación académica y metodología científica.
-    Genera la estructura de la metodología "${methodology}" utilizando la siguiente información:
+Eres un asistente experto en metodología de investigación. 
+Con base en la metodología "${methodology}", el título "${title}" y el objetivo "${objective}", 
+devuelve exclusivamente la estructura aplicada en formato JSON.
 
-    - Título del estudio: ${title}
-    - Objetivo: ${objective}
+Ejemplo de salida:
+{
+  "P": "descripción...",
+  "I": "descripción...",
+  "C": "descripción...",
+  "O": "descripción..."
+}
 
-    La metodología sigue la estructura: 
-    ${JSON.stringify(selectedMethodology, null, 2)}
-
-    **Desarrolla cada uno de estos componentes utilizando la información dada.**
-    - Usa explicaciones claras y concisas en tono académico.
-    - No agregues contenido inventado, solo basado en la información proporcionada.
-  `;
+No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valores desarrollados.
+`;
 
   try {
-    // 🔹 **Llamada a OpenAI**
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 1.0
+      },
+      {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
+      }
+    );
+
+    const structuredResponse = response.data.choices[0].message.content.trim();
+
+    // Intenta parsear el resultado como JSON
+    let parsedData;
+    try {
+      parsedData = JSON.parse(structuredResponse);
+    } catch (error) {
+      console.error('Error al parsear JSON:', error);
+      return res.status(500).json({ error: 'La respuesta no es un JSON válido' });
+    }
+
+    res.status(200).json(parsedData);
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar preguntas de investigación
+app.post('/api/research-questions', async (req, res) => {
+  const { title, objective, methodology } = req.body;
+
+  if (!title || !objective || !methodology) {
+    return res.status(400).json({ error: 'Faltan datos en la solicitud' });
+  }
+
+  try {
+    // Genera el prompt para OpenAI
+    const prompt = `
+    Eres un experto en metodología de investigación. Genera entre 1 y 5 preguntas de investigación para una Revisión Sistemática de Literatura.
+
+    - **Título:** ${title}
+    - **Objetivo:** ${objective}
+    - **Metodología:** ${methodology}
+
+    **Instrucciones:**
+    - Usa un tono académico.
+    - Asegúrate de que sean preguntas abiertas y relevantes para la metodología utilizada.
+    - No agregues texto adicional, responde solo con las preguntas enumeradas.
+
+    Ejemplo de salida:
+    1. ¿Cómo ha evolucionado el uso de la inteligencia artificial en la detección de enfermedades?
+    2. ¿Qué impacto tienen los modelos de aprendizaje profundo en la precisión del diagnóstico médico?
+    `;
+
+    // Llamada a OpenAI
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'Eres un asistente experto en metodología de investigación académica.' },
+          { role: 'system', content: 'Eres un asistente experto en metodología de investigación.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 1.0
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    // Extraer las preguntas generadas
+    const generatedQuestions = response.data.choices[0].message.content.trim().split('\n');
+
+    // Enviar respuesta
+    res.status(200).json({ research_questions: generatedQuestions });
+  } catch (error) {
+    console.error('Error al generar preguntas:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar palabras clave y sinónimos
+app.post('/api/generate-keywords', async (req, res) => {
+  const { methodologyData } = req.body;
+
+  if (!methodologyData || typeof methodologyData !== 'object') {
+    return res.status(400).json({ error: 'Debe proporcionar un objeto con la metodología' });
+  }
+
+  try {
+    // Construcción del prompt para OpenAI
+    const prompt = `
+      Eres un experto en terminología científica. Extrae palabras clave de la siguiente metodología y proporciona sinónimos relevantes.
+
+      Metodología:
+      ${JSON.stringify(methodologyData, null, 2)}
+
+      **Instrucciones:**
+      - Extrae palabras clave significativas de cada sección.
+      - Para cada palabra clave, genera de entre 2 a 5 sinónimos relacionados.
+      - La respuesta debe estar en formato de tabla JSON con los siguientes campos:
+        - "palabra_clave"
+        - "metodologia"
+        - "sinonimos" (array con máximo 3 elementos)
+      
+      **Ejemplo de salida:**
+      [
+        { "palabra_clave": "inteligencia artificial", "metodologia": "Intervención", "sinonimos": ["aprendizaje automático", "redes neuronales", "deep learning"] },
+        { "palabra_clave": "diagnóstico", "metodologia": "Comparación", "sinonimos": ["detección", "evaluación", "análisis clínico"] }
+      ]
+      
+      **No incluyas ninguna otra explicación o texto adicional.**
+    `;
+
+    // Llamada a OpenAI
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en terminología científica y metodología de investigación.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 1.0
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    // Extraer la respuesta generada (en formato JSON)
+    const generatedKeywords = JSON.parse(response.data.choices[0].message.content.trim());
+
+    // Enviar respuesta
+    res.status(200).json({ keywords: generatedKeywords });
+  } catch (error) {
+    console.error('Error al generar palabras clave:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar cadenas de búsqueda
+app.post('/api/generate-search-string', async (req, res) => {
+  const { keywords } = req.body;
+
+  if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
+    return res.status(400).json({ error: 'Debe proporcionar una lista de palabras clave con sinónimos.' });
+  }
+
+  try {
+    // Construcción de la cadena de búsqueda
+    const searchString = keywords
+      .map(({ palabra_clave, sinonimos }) => {
+        const allTerms = [palabra_clave, ...sinonimos].map(term => `"${term}"`).join(" OR ");
+        return `(${allTerms})`;
+      })
+      .join(" AND ");
+
+    // Enviar respuesta
+    res.status(200).json({ searchString });
+  } catch (error) {
+    console.error('Error al generar cadena de búsqueda:', error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud.' });
+  }
+});
+
+// Ruta para generar criterios de inclusion y exclusion
+app.post('/api/generate-criteria', async (req, res) => {
+  const { title, objective } = req.body;
+
+  if (!title || !objective) {
+    return res.status(400).json({ error: 'Debe proporcionar título y objetivo del estudio.' });
+  }
+
+  try {
+    // Construcción del prompt para OpenAI
+    const prompt = `
+      Eres un experto en revisiones sistemáticas de literatura.
+      Basado en el siguiente estudio:
+      - Título: ${title}
+      - Objetivo: ${objective}
+
+      Genera una tabla con criterios de inclusión y exclusión.
+      La respuesta debe estar estructurada solo en JSON, con este formato:
+
+      [
+        { "criterio": "Texto del criterio 1", "categoria": "incluido" },
+        { "criterio": "Texto del criterio 2", "categoria": "excluido" }
+      ]
+
+      - No uses listas ni explicaciones adicionales, solo el JSON solicitado.
+      - Usa lenguaje académico, pero claro y directo.
+    `;
+
+    // Llamada a OpenAI para generar la respuesta
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en metodología científica.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7
@@ -142,20 +318,14 @@ app.post('/api/methodology-structure', async (req, res) => {
       }
     );
 
-    // 🔹 **Extraer respuesta de OpenAI**
-    const structuredResponse = response.data.choices[0].message.content.trim();
+    // Extraer la respuesta generada
+    const generatedCriteria = JSON.parse(response.data.choices[0].message.content.trim());
 
-    // Responder con la estructura + la respuesta generada por OpenAI
-    res.status(200).json({
-      methodology: methodology.toUpperCase(),
-      title,
-      objective,
-      structure: selectedMethodology,
-      generated_structure: structuredResponse
-    });
+    // Enviar la respuesta al cliente
+    res.status(200).json(generatedCriteria);
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+    console.error('Error al generar criterios:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud.' });
   }
 });
 

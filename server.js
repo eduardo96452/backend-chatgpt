@@ -308,7 +308,7 @@ app.post('/api/generate-criteria', async (req, res) => {
           { role: 'system', content: 'Eres un asistente experto en metodología científica.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7
+        temperature: 1.0
       },
       {
         headers: {
@@ -329,7 +329,8 @@ app.post('/api/generate-criteria', async (req, res) => {
   }
 });
 
-// Inicia el servidor
+
+// Inicia el servidor en localhost:3000
 app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
 });

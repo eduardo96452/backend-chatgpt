@@ -91,6 +91,31 @@ Ejemplo de salida:
   "C": "descripción...",
   "O": "descripción..."
 }
+o
+{
+  "P": "descripción...",
+  "I": "descripción...",
+  "C": "descripción...",
+  "O": "descripción...",
+  "C": "descripción..."
+}
+o
+{
+  "P": "descripción...",
+  "I": "descripción...",
+  "C": "descripción...",
+  "O": "descripción...",
+  "T": "descripción...",
+  "T": "descripción..."
+}
+o
+{
+  "S": "descripción...",
+  "P": "descripción...",
+  "I": "descripción...",
+  "C": "descripción...",
+  "E": "descripción..."
+}
 
 No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valores desarrollados.
 `;

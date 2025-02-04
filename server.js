@@ -97,7 +97,7 @@ o
   "I": "descripción...",
   "C": "descripción...",
   "O": "descripción...",
-  "C": "descripción..."
+  "C2": "descripción..."
 }
 o
 {
@@ -106,7 +106,7 @@ o
   "C": "descripción...",
   "O": "descripción...",
   "T": "descripción...",
-  "T": "descripción..."
+  "T2": "descripción..."
 }
 o
 {

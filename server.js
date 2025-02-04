@@ -70,8 +70,8 @@ app.post('/api/methodology-structure', async (req, res) => {
 
   const methodologies = {
     PICO: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome" },
-    PICOC: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", C2: "Contexto" },
-    PICOTT: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", T: "Tipo de pregunta", T2: "Tipo de estudio" },
+    PICOC: { P: "Población", I: "Intervención", C1: "Comparación", O: "Outcome", C2: "Contexto" },
+    PICOTT: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", T1: "Tipo de pregunta", T2: "Tipo de estudio" },
     SPICE: { S: "Setting", P: "Población", I: "Intervención", C: "Comparación", E: "Evaluación" }
   };
 
@@ -84,7 +84,7 @@ Eres un asistente experto en metodología de investigación.
 Con base en la metodología "${methodology}", el título "${title}" y el objetivo "${objective}", 
 devuelve exclusivamente la estructura aplicada en formato JSON.
 
-Ejemplo de salida:
+Ejemplos de salida:
 {
   "P": "descripción...",
   "I": "descripción...",
@@ -95,7 +95,7 @@ o
 {
   "P": "descripción...",
   "I": "descripción...",
-  "C": "descripción...",
+  "C1": "descripción...",
   "O": "descripción...",
   "C2": "descripción..."
 }
@@ -105,7 +105,7 @@ o
   "I": "descripción...",
   "C": "descripción...",
   "O": "descripción...",
-  "T": "descripción...",
+  "T1": "descripción...",
   "T2": "descripción..."
 }
 o

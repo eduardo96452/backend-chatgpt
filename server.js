@@ -86,35 +86,35 @@ devuelve exclusivamente la estructura aplicada en formato JSON.
 
 Ejemplos de salida:
 {
-  "picoP": "descripción...",
-  "picoI": "descripción...",
-  "picoC": "descripción...",
-  "picoO": "descripción..."
+  "picoP": "Pacientes con diagnósticos convencionales",
+  "picoI": "Aplicación de modelos de aprendizaje profundo",
+  "picoC": "Resultados obtenidos con métodos tradicionales",
+  "picoO": "Medir la efectividad y precisión de la IA en el diagnóstico"
 }
 o
 {
-  "picocP": "descripción...",
-  "picocI": "descripción...",
-  "picocC": "descripción...",
-  "picocO": "descripción...",
-  "picocContext": "descripción..."
+  "picocP": "Estudiantes de educación secundaria",
+  "picocI": "Uso de plataformas de gamificación en el aula",
+  "picocC": "Métodos de enseñanza tradicionales",
+  "picocO": "Evaluar la mejora en la motivación y rendimiento académico",
+  "picocContext": "Entornos educativos urbanos con acceso a tecnología"
 }
 o
 {
-  "picottP": "descripción...",
-  "picottI": "descripción...",
-  "picottC": "descripción...",
-  "picottO": "descripción...",
-  "picottT": "descripción...",
-  "picottT2": "descripción..."
+  "picottP": "Empleados de empresas tecnológicas",
+  "picottI": "Implementación del teletrabajo",
+  "picottC": "Trabajo presencial en oficinas",
+  "picottO": "Evaluar cambios en productividad y satisfacción laboral",
+  "picottT": "Pregunta organizacional",
+  "picottT2": "Estudio comparativo transversal"
 }
 o
 {
-  "spiceS": "descripción...",
-  "spiceP": "descripción...",
-  "spiceI": "descripción...",
-  "spiceC": "descripción...",
-  "spiceE": "descripción..."
+  "spiceS": "Entornos digitales y redes sociales",
+  "spiceP": "Ciudadanos comprometidos con la política local",
+  "spiceI": "Uso de plataformas digitales para participación ciudadana",
+  "spiceC": "Participación tradicional en reuniones públicas",
+  "spiceE": "Medir el nivel de implicación y satisfacción con la participación"
 }
 
 No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valores desarrollados.

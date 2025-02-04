@@ -70,8 +70,8 @@ app.post('/api/methodology-structure', async (req, res) => {
 
   const methodologies = {
     PICO: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome" },
-    PICOC: { P: "Población", I: "Intervención", C1: "Comparación", O: "Outcome", C2: "Contexto" },
-    PICOTT: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", T1: "Tipo de pregunta", T2: "Tipo de estudio" },
+    PICOC: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", E: "Contexto" },
+    PICOTT: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", T: "Tipo de pregunta", E: "Tipo de estudio" },
     SPICE: { S: "Setting", P: "Población", I: "Intervención", C: "Comparación", E: "Evaluación" }
   };
 
@@ -95,9 +95,9 @@ o
 {
   "P": "descripción...",
   "I": "descripción...",
-  "C1": "descripción...",
+  "C": "descripción...",
   "O": "descripción...",
-  "C2": "descripción..."
+  "E": "descripción..."
 }
 o
 {
@@ -105,8 +105,8 @@ o
   "I": "descripción...",
   "C": "descripción...",
   "O": "descripción...",
-  "T1": "descripción...",
-  "T2": "descripción..."
+  "T": "descripción...",
+  "E": "descripción..."
 }
 o
 {

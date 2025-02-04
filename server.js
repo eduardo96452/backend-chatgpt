@@ -222,32 +222,30 @@ app.post('/api/generate-keywords', async (req, res) => {
     return res.status(400).json({ error: 'Debe proporcionar un objeto con la metodología' });
   }
 
+  // Construir el prompt indicando explícitamente las etiquetas que se deben usar para cada metodología
+  const prompt = `
+Eres un experto en terminología científica. Extrae palabras clave significativas de la siguiente metodología y proporciona sinónimos relevantes para cada una.
+
+Utiliza las siguientes etiquetas para el campo "metodologia" en la respuesta:
+- Para SPICE: [ "Escenario (S)", "Perspectiva (P)", "Intervención (I)", "Comparación (C)", "Escenario (E)" ]
+- Para PICO: [ "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)" ]
+- Para PICOC: [ "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Contexto (C)" ]
+- Para PICOTT: [ "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Tipo de pregunta (T)", "Tipo de articulo (T)" ]
+
+A partir de la siguiente metodología (en formato JSON), extrae las palabras clave y para cada una asigna la etiqueta correspondiente (según la sección de la metodología a la que pertenezca) y genera un array de sinónimos (entre 2 y 5 sinónimos). 
+
+La respuesta debe estar en formato JSON, en una lista de objetos con las siguientes propiedades:
+  - "palabra_clave": la palabra clave extraída,
+  - "metodologia": la etiqueta asignada (por ejemplo, "Población (P)"),
+  - "sinonimos": un array con 2 a 5 sinónimos.
+
+No incluyas ningún texto adicional ni explicaciones.
+
+Metodología:
+${JSON.stringify(methodologyData, null, 2)}
+`;
+
   try {
-    // Construcción del prompt para OpenAI
-    const prompt = `
-      Eres un experto en terminología científica. Extrae palabras clave de la siguiente metodología y proporciona sinónimos relevantes.
-
-      Metodología:
-      ${JSON.stringify(methodologyData, null, 2)}
-
-      **Instrucciones:**
-      - Extrae palabras clave significativas de cada sección.
-      - Para cada palabra clave, genera de entre 2 a 5 sinónimos relacionados.
-      - La respuesta debe estar en formato de tabla JSON con los siguientes campos:
-        - "palabra_clave"
-        - "metodologia"
-        - "sinonimos" (array con máximo 3 elementos)
-      
-      **Ejemplo de salida:**
-      [
-        { "palabra_clave": "inteligencia artificial", "metodologia": "Intervención", "sinonimos": ["aprendizaje automático", "redes neuronales", "deep learning"] },
-        { "palabra_clave": "diagnóstico", "metodologia": "Comparación", "sinonimos": ["detección", "evaluación", "análisis clínico"] }
-      ]
-      
-      **No incluyas ninguna otra explicación o texto adicional.**
-    `;
-
-    // Llamada a OpenAI
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -266,10 +264,8 @@ app.post('/api/generate-keywords', async (req, res) => {
       }
     );
 
-    // Extraer la respuesta generada (en formato JSON)
+    // Extraer la respuesta generada y parsearla como JSON
     const generatedKeywords = JSON.parse(response.data.choices[0].message.content.trim());
-
-    // Enviar respuesta
     res.status(200).json({ keywords: generatedKeywords });
   } catch (error) {
     console.error('Error al generar palabras clave:', error.response?.data || error.message);

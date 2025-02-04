@@ -153,38 +153,38 @@ No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valo
 
 // Ruta para generar preguntas de investigación
 app.post('/api/research-questions', async (req, res) => {
-  const { title, objective, methodology } = req.body;
+  const { title, objective, methodology, numQuestions } = req.body;
 
   if (!title || !objective || !methodology) {
     return res.status(400).json({ error: 'Faltan datos en la solicitud' });
   }
 
+  // Si no se especifica numQuestions, por defecto se generan 3 preguntas.
+  const questionsCount = numQuestions && Number(numQuestions) > 0 ? Number(numQuestions) : 3;
+
+  // Construir el prompt para OpenAI
+  const prompt = `
+Eres un asistente experto en investigación académica. 
+Con base en la metodología "${methodology}", el título "${title}" y el objetivo "${objective}", 
+genera ${questionsCount} preguntas de investigación en formato JSON. 
+Ejemplo de salida:
+{
+  "questions": [
+    "¿Cómo ha evolucionado el uso de la inteligencia artificial en la detección de enfermedades?",
+    "¿Qué impacto tienen los modelos de aprendizaje profundo en la precisión del diagnóstico médico?",
+    "Pregunta 3..."
+  ]
+}
+Devuelve únicamente el JSON sin ningún texto adicional.
+  `;
   try {
-    // Genera el prompt para OpenAI
-    const prompt = `
-    Eres un experto en metodología de investigación. Genera entre 1 y 5 preguntas de investigación para una Revisión Sistemática de Literatura.
-
-    - **Título:** ${title}
-    - **Objetivo:** ${objective}
-    - **Metodología:** ${methodology}
-
-    **Instrucciones:**
-    - Usa un tono académico.
-    - Asegúrate de que sean preguntas abiertas y relevantes para la metodología utilizada.
-    - No agregues texto adicional, responde solo con las preguntas enumeradas.
-
-    Ejemplo de salida:
-    1. ¿Cómo ha evolucionado el uso de la inteligencia artificial en la detección de enfermedades?
-    2. ¿Qué impacto tienen los modelos de aprendizaje profundo en la precisión del diagnóstico médico?
-    `;
-
     // Llamada a OpenAI
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'Eres un asistente experto en metodología de investigación.' },
+          { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
           { role: 'user', content: prompt }
         ],
         temperature: 1.0
@@ -197,13 +197,19 @@ app.post('/api/research-questions', async (req, res) => {
       }
     );
 
-    // Extraer las preguntas generadas
-    const generatedQuestions = response.data.choices[0].message.content.trim().split('\n');
+    // Se extrae el contenido y se intenta parsear como JSON
+    const generatedText = response.data.choices[0].message.content.trim();
+    let parsedOutput;
+    try {
+      parsedOutput = JSON.parse(generatedText);
+    } catch (err) {
+      // Si falla el parseo, se separa por líneas y se filtra
+      parsedOutput = { questions: generatedText.split('\n').filter(line => line.trim() !== '') };
+    }
 
-    // Enviar respuesta
-    res.status(200).json({ research_questions: generatedQuestions });
+    res.status(200).json(parsedOutput);
   } catch (error) {
-    console.error('Error al generar preguntas:', error.response?.data || error.message);
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 });

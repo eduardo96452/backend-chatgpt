@@ -69,10 +69,10 @@ app.post('/api/methodology-structure', async (req, res) => {
   }
 
   const methodologies = {
-    PICO: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome" },
-    PICOC: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", H: "Contexto" },
-    PICOTT: { P: "Población", I: "Intervención", C: "Comparación", O: "Outcome", T: "Tipo de pregunta", Z: "Tipo de estudio" },
-    SPICE: { S: "Setting", P: "Población", I: "Intervención", C: "Comparación", E: "Evaluación" }
+    PICO: { picoP: "Población", picoI: "Intervención", picoC: "Comparación", picoO: "Outcome" },
+    PICOC: { picocP: "Población", picocI: "Intervención", picocC: "Comparación", picocO: "Outcome", picocContext: "Contexto" },
+    PICOTT: { picottP: "Población", picottI: "Intervención", picottC: "Comparación", picottO: "Outcome", picottT: "Tipo de pregunta", picottT2: "Tipo de estudio" },
+    SPICE: { spiceS: "Setting", spiceP: "Población", spiceI: "Intervención", spiceC: "Comparación", spiceE: "Evaluación" }
   };
 
   if (!methodologies[methodology.toUpperCase()]) {
@@ -86,35 +86,35 @@ devuelve exclusivamente la estructura aplicada en formato JSON.
 
 Ejemplos de salida:
 {
-  "P": "descripción...",
-  "I": "descripción...",
-  "C": "descripción...",
-  "O": "descripción..."
+  "picoP": "descripción...",
+  "picoI": "descripción...",
+  "picoC": "descripción...",
+  "picoO": "descripción..."
 }
 o
 {
-  "P": "descripción...",
-  "I": "descripción...",
-  "C": "descripción...",
-  "O": "descripción...",
-  "H": "descripción..."
+  "picocP": "descripción...",
+  "picocI": "descripción...",
+  "picocC": "descripción...",
+  "picocO": "descripción...",
+  "picocContext": "descripción..."
 }
 o
 {
-  "P": "descripción...",
-  "I": "descripción...",
-  "C": "descripción...",
-  "O": "descripción...",
-  "T": "descripción...",
-  "Z": "descripción..."
+  "picottP": "descripción...",
+  "picottI": "descripción...",
+  "picottC": "descripción...",
+  "picottO": "descripción...",
+  "picottT": "descripción...",
+  "picottT2": "descripción..."
 }
 o
 {
-  "S": "descripción...",
-  "P": "descripción...",
-  "I": "descripción...",
-  "C": "descripción...",
-  "E": "descripción..."
+  "spiceS": "descripción...",
+  "spiceP": "descripción...",
+  "spiceI": "descripción...",
+  "spiceC": "descripción...",
+  "spiceE": "descripción..."
 }
 
 No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valores desarrollados.

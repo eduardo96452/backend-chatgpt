@@ -226,14 +226,21 @@ app.post('/api/generate-keywords', async (req, res) => {
   const prompt = `
 Eres un experto en terminología científica y metodología de investigación. Dada la siguiente metodología en formato JSON, extrae palabras clave significativas de cada sección y asigna la etiqueta correspondiente según la siguiente convención:
 - Para SPICE, utiliza: "Escenario", "Perspectiva", "Intervención", "Comparación", "Evidencia".
-- Para PICO, utiliza: "Población", "Intervenció", "Comparación", "Resultado".
+- Para PICO, utiliza: "Población", "Intervención", "Comparación", "Resultado".
 - Para PICOC, utiliza: "Población", "Intervención", "Comparación", "Resultado", "Contexto".
 - Para PICOTT, utiliza: "Población", "Intervención", "Comparación", "Resultado", "Tipo de pregunta", "Tipo de artículo".
 
-Para cada palabra clave extraída, genera un array de 2 a 5 sinónimos relevantes. La respuesta debe estar estrictamente en formato JSON, como una lista de objetos, donde cada objeto tenga las siguientes propiedades:
+Para cada palabra clave extraída, genera un array de 2 a 5 sinónimos relevantes. Además, incluye en cada objeto un campo "siglas" que contenga un número indicando la posición de la etiqueta, de acuerdo a la convención. Por ejemplo, para PICO: 
+- Si la etiqueta asignada es "Población", "siglas" debe ser 1.
+- Si es "Intervención", "siglas" debe ser 2.
+- Si es "Comparación", "siglas" debe ser 3.
+- Si es "Resultado", "siglas" debe ser 4.
+
+La respuesta debe estar estrictamente en formato JSON, como una lista de objetos, donde cada objeto tenga las siguientes propiedades:
   - "palabra_clave": la palabra clave extraída,
   - "metodologia": la etiqueta asignada (por ejemplo, "Población"),
-  - "sinonimos": un array con 2 a 5 sinónimos.
+  - "sinonimos": un array con 2 a 5 sinónimos,
+  - "siglas": un número indicando la posición de la etiqueta.
 
 No incluyas ningún texto adicional ni explicaciones.
 

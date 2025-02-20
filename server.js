@@ -222,21 +222,17 @@ app.post('/api/generate-keywords', async (req, res) => {
     return res.status(400).json({ error: 'Debe proporcionar un objeto con la metodología' });
   }
 
-  // Construir el prompt indicando explícitamente las etiquetas que se deben usar para cada metodología
+  // Construir el prompt detallado
   const prompt = `
-Eres un experto en terminología científica. Extrae palabras clave significativas de la siguiente metodología y proporciona sinónimos relevantes para cada una.
+Eres un experto en terminología científica y metodología de investigación. Dada la siguiente metodología en formato JSON, extrae palabras clave significativas de cada sección y asigna la etiqueta correspondiente según la siguiente convención:
+- Para SPICE, utiliza: "Escenario (S)", "Perspectiva (P)", "Intervención (I)", "Comparación (C)", "Evidencia (E)".
+- Para PICO, utiliza: "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)".
+- Para PICOC, utiliza: "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Contexto (CONTEXT)".
+- Para PICOTT, utiliza: "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Tipo de pregunta (TIPO1)", "Tipo de artículo (TIPO2)".
 
-Utiliza las siguientes etiquetas para el campo "metodologia" en la respuesta:
-- Para SPICE: [ "Escenario (S)", "Perspectiva (P)", "Intervención (I)", "Comparación (C)", "Escenario (E)" ]
-- Para PICO: [ "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)" ]
-- Para PICOC: [ "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Contexto (C)" ]
-- Para PICOTT: [ "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Tipo de pregunta (T)", "Tipo de articulo (T)" ]
-
-A partir de la siguiente metodología (en formato JSON), extrae las palabras clave y para cada una asigna la etiqueta correspondiente (según la sección de la metodología a la que pertenezca) y genera un array de sinónimos (entre 2 y 5 sinónimos). 
-
-La respuesta debe estar en formato JSON, en una lista de objetos con las siguientes propiedades:
+Para cada palabra clave extraída, genera un array de 2 a 5 sinónimos relevantes. La respuesta debe estar estrictamente en formato JSON, como una lista de objetos, donde cada objeto tenga las siguientes propiedades:
   - "palabra_clave": la palabra clave extraída,
-  - "metodologia": la etiqueta asignada (por ejemplo, "Población (P)"),
+  - "metodologia": la etiqueta asignada (por ejemplo, "Población"),
   - "sinonimos": un array con 2 a 5 sinónimos.
 
 No incluyas ningún texto adicional ni explicaciones.
@@ -264,7 +260,7 @@ ${JSON.stringify(methodologyData, null, 2)}
       }
     );
 
-    // Extraer la respuesta generada y parsearla como JSON
+    // Extraer y parsear la respuesta
     const generatedKeywords = JSON.parse(response.data.choices[0].message.content.trim());
     res.status(200).json({ keywords: generatedKeywords });
   } catch (error) {
@@ -272,6 +268,7 @@ ${JSON.stringify(methodologyData, null, 2)}
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 });
+
 
 // Ruta para generar cadenas de búsqueda
 app.post('/api/generate-search-string', async (req, res) => {

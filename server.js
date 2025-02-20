@@ -225,10 +225,10 @@ app.post('/api/generate-keywords', async (req, res) => {
   // Construir el prompt detallado
   const prompt = `
 Eres un experto en terminología científica y metodología de investigación. Dada la siguiente metodología en formato JSON, extrae palabras clave significativas de cada sección y asigna la etiqueta correspondiente según la siguiente convención:
-- Para SPICE, utiliza: "Escenario (S)", "Perspectiva (P)", "Intervención (I)", "Comparación (C)", "Evidencia (E)".
-- Para PICO, utiliza: "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)".
-- Para PICOC, utiliza: "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Contexto (CONTEXT)".
-- Para PICOTT, utiliza: "Población (P)", "Intervención (I)", "Comparación (C)", "Resultado (O)", "Tipo de pregunta (TIPO1)", "Tipo de artículo (TIPO2)".
+- Para SPICE, utiliza: "16", "17", "18", "19", "20".
+- Para PICO, utiliza: "1", "2", "3", "4".
+- Para PICOC, utiliza: "5", "6", "7", "8", "9".
+- Para PICOTT, utiliza: "10", "11", "12", "13", "14", "15".
 
 Para cada palabra clave extraída, genera un array de 2 a 5 sinónimos relevantes. La respuesta debe estar estrictamente en formato JSON, como una lista de objetos, donde cada objeto tenga las siguientes propiedades:
   - "palabra_clave": la palabra clave extraída,

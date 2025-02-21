@@ -267,7 +267,7 @@ app.post('/api/generate-keywords', async (req, res) => {
   Metodología:
   ${JSON.stringify(methodologyData, null, 2)}
   `;
-  
+
 
   try {
     const response = await axios.post(
@@ -377,6 +377,74 @@ app.post('/api/generate-criteria', async (req, res) => {
     res.status(200).json(generatedCriteria);
   } catch (error) {
     console.error('Error al generar criterios:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud.' });
+  }
+});
+
+// Ruta para generar preguntas de extracción de datos con tipo de respuesta
+app.post('/api/generate-data-extraction-questions', async (req, res) => {
+  const { title, objective, numberOfQuestions } = req.body;
+
+  // Validaciones básicas
+  if (!title || !objective || !numberOfQuestions) {
+    return res.status(400).json({
+      error: 'Debe proporcionar título, objetivo y la cantidad de preguntas que desea generar.'
+    });
+  }
+
+  try {
+    // Construcción del prompt para OpenAI
+    const prompt = `
+      Eres un experto en revisiones sistemáticas de literatura.
+      Basado en el siguiente estudio:
+      - Título: ${title}
+      - Objetivo: ${objective}
+
+      Genera un arreglo JSON con ${numberOfQuestions} preguntas de extracción de datos,
+      donde cada objeto incluya:
+      - "pregunta": la pregunta a realizar
+      - "tipo": un valor que puede ser "Booleano", "Texto", "Decimal", "Entero" o "Fecha"
+
+      El formato debe ser exactamente:
+      [
+        { "pregunta": "Texto de la pregunta 1", "tipo": "Booleano" },
+        { "pregunta": "Texto de la pregunta 2", "tipo": "Texto" }
+        ...
+      ]
+
+      No incluyas explicaciones adicionales ni rodees la respuesta de texto extra;
+      solamente devuelve ese arreglo en JSON.
+    `;
+
+    // Llamada a la API de OpenAI usando axios (ajusta la importación y configuración según tu proyecto)
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en metodología científica.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 1.0
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    // Extraer la respuesta generada por GPT-4
+    const generatedText = response.data.choices[0].message.content.trim();
+
+    // Se asume que la respuesta es un arreglo JSON válido
+    const generatedQuestions = JSON.parse(generatedText);
+
+    // Enviar la respuesta al cliente
+    res.status(200).json({ questions: generatedQuestions });
+  } catch (error) {
+    console.error('Error al generar preguntas de extracción de datos:', error.response?.data || error.message);
     res.status(500).json({ error: 'Error al procesar la solicitud.' });
   }
 });

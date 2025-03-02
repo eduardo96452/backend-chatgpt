@@ -196,19 +196,26 @@ No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valo
 
 // Ruta para generar preguntas de investigación
 app.post('/api/research-questions', async (req, res) => {
-  const { title, objective, methodology, numQuestions } = req.body;
+  const { title, objective, methodology, numQuestions, tipoInvestigacion } = req.body;
 
+  // Verificar que existan los campos obligatorios
   if (!title || !objective || !methodology) {
-    return res.status(400).json({ error: 'Faltan datos en la solicitud' });
+    return res.status(400).json({ error: 'Faltan datos en la solicitud (title, objective, methodology)' });
   }
 
-  // Si no se especifica numQuestions, por defecto se generan 3 preguntas.
+  // Si no se especifica numQuestions o no es válido, por defecto se generan 3 preguntas
   const questionsCount = numQuestions && Number(numQuestions) > 0 ? Number(numQuestions) : 3;
+
+  // Construir una sección opcional para "tipoInvestigacion"
+  let investigationPart = '';
+  if (tipoInvestigacion && tipoInvestigacion.trim()) {
+    investigationPart = `y considerando que la investigación es de tipo "${tipoInvestigacion.trim()}" `;
+  }
 
   // Construir el prompt para OpenAI
   const prompt = `
 Eres un asistente experto en investigación académica. 
-Con base en la metodología "${methodology}", el título "${title}" y el objetivo "${objective}", 
+Con base en la metodología "${methodology}", el título "${title}" y el objetivo "${objective}" ${investigationPart}
 genera ${questionsCount} preguntas de investigación en formato JSON. 
 Ejemplo de salida:
 {
@@ -220,6 +227,7 @@ Ejemplo de salida:
 }
 Devuelve únicamente el JSON sin ningún texto adicional.
   `;
+
   try {
     // Llamada a OpenAI
     const response = await axios.post(
@@ -256,6 +264,7 @@ Devuelve únicamente el JSON sin ningún texto adicional.
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 });
+
 
 // Ruta para generar palabras clave y sinónimos
 app.post('/api/generate-keywords', async (req, res) => {

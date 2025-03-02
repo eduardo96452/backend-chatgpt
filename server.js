@@ -11,21 +11,53 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Ruta para manejar solicitudes para el objetivo.....................
+// Ruta para manejar solicitudes para el objetivo
 app.post('/api/generate-objetive', async (req, res) => {
-  const { title, methodology, description } = req.body;
+  const {
+    title,
+    methodology,
+    description,
+    alcance,
+    pais,
+    ciudad,
+    area_conocimiento,
+    tipo_investigacion,
+    institucion
+  } = req.body;
 
   if (!title || !methodology || !description) {
-    return res.status(400).json({ error: 'Faltan datos en la solicitud' });
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (title, methodology, description)' });
   }
 
   try {
+    // Construimos una sección adicional con campos opcionales
+    let optionalFields = '';
+    if (alcance) {
+      optionalFields += `\n- Alcance: ${alcance}`;
+    }
+    if (pais) {
+      optionalFields += `\n- País: ${pais}`;
+    }
+    if (ciudad) {
+      optionalFields += `\n- Ciudad: ${ciudad}`;
+    }
+    if (area_conocimiento) {
+      optionalFields += `\n- Área de Conocimiento: ${area_conocimiento}`;
+    }
+    if (tipo_investigacion) {
+      optionalFields += `\n- Tipo de Investigación: ${tipo_investigacion}`;
+    }
+    if (institucion) {
+      optionalFields += `\n- Institución: ${institucion}`;
+    }
+
     // Construye el prompt para OpenAI
-    const prompt = `      
+    const prompt = `
       1. Usa los siguientes datos para elaborar un objetivo:
       - Título de la revisión: ${title}
       - Metodología de revisión: ${methodology}
-      - Descripción breve: ${description}
+      - Descripción breve: ${description}${optionalFields}
+
       2. Escribe el objetivo usando la fórmula:
       (verbo en infinitivo) + (qué cosa) + (cómo) + (para qué)
       3. Tu respuesta debe resultar en una sola frase en tono académico.
@@ -36,7 +68,7 @@ app.post('/api/generate-objetive', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4', // Cambia a 'gpt-4.77.3' si estás usando esa versión exacta
+        model: 'gpt-4', // Ajusta si usas otra versión
         messages: [
           { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
           { role: 'user', content: prompt }

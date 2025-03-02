@@ -51,17 +51,28 @@ app.post('/api/generate-objetive', async (req, res) => {
       optionalFields += `\n- Institución: ${institucion}`;
     }
 
+    // Si hay datos opcionales, los agrupamos con un encabezado
+    let extraSection = '';
+    if (optionalFields.trim()) {
+      extraSection = `\nInformación adicional:\n${optionalFields}`;
+    }
+
+
     // Construye el prompt para OpenAI
     const prompt = `
-      1. Usa los siguientes datos para elaborar un objetivo:
-      - Título de la revisión: ${title}
-      - Metodología de revisión: ${methodology}
-      - Descripción breve: ${description}${optionalFields}
+    1. Usa los siguientes datos para elaborar un objetivo en un solo enunciado de tono académico:
+    - Título de la revisión: ${title}
+    - Metodología de revisión: ${methodology}
+    - Descripción breve: ${description}${extraSection}
 
-      2. Escribe el objetivo usando la fórmula:
+    2. El objetivo debe seguir la fórmula:
       (verbo en infinitivo) + (qué cosa) + (cómo) + (para qué)
-      3. Tu respuesta debe resultar en una sola frase en tono académico.
-      4. No incluyas enumeraciones ni viñetas; la frase final debe ser fluida y concisa.
+
+    3. No excedas las 30 palabras en tu respuesta final.
+
+    4. No uses enumeraciones, viñetas ni explicaciones adicionales; la frase debe ser fluida y concisa.
+
+    5. Asegúrate de que el texto sea redactado en un estilo académico, sin incluir listas o puntos.
     `;
 
     // Llama a la API de OpenAI

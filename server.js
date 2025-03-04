@@ -352,26 +352,65 @@ app.post('/api/generate-keywords', async (req, res) => {
 
 // Ruta para generar cadenas de búsqueda
 app.post('/api/generate-search-string', async (req, res) => {
-  const { keywords } = req.body;
+  const { keywords, base, idioma } = req.body;
 
   if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
     return res.status(400).json({ error: 'Debe proporcionar una lista de palabras clave con sinónimos.' });
   }
+  if (!base) {
+    return res.status(400).json({ error: 'Debe proporcionar la base de datos.' });
+  }
+  if (!idioma) {
+    return res.status(400).json({ error: 'Debe proporcionar el idioma.' });
+  }
 
   try {
-    // Construcción de la cadena de búsqueda
-    const searchString = keywords
+    // Construir una representación de las keywords:
+    // Cada objeto se transforma en una cadena con términos entre comillas, combinados con OR.
+    const keywordsString = keywords
       .map(({ palabra_clave, sinonimos }) => {
-        const allTerms = [palabra_clave, ...sinonimos].map(term => `"${term}"`).join(" OR ");
+        const allTerms = [palabra_clave, ...sinonimos]
+          .filter(term => term && term.trim() !== '')
+          .map(term => `"${term.trim()}"`)
+          .join(" OR ");
         return `(${allTerms})`;
       })
       .join(" AND ");
 
-    // Enviar respuesta
-    res.status(200).json({ searchString });
+    // Construir el prompt para GPT-4
+    const prompt = `
+Utilizando la siguiente información, genera una cadena de búsqueda avanzada en formato booleano:
+- Palabras clave y sinónimos: ${keywordsString}
+- Base de datos: ${base}
+- Idioma: ${idioma}
+
+La cadena de búsqueda debe estar formulada con cada término entre comillas, usar "OR" para combinar sinónimos y "AND" para combinar grupos de términos. Proporciona únicamente la cadena final sin explicaciones adicionales.
+`;
+
+    // Llamada a la API de OpenAI
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en la generación de cadenas de búsqueda académicas.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedSearchString = response.data.choices[0].message.content.trim();
+    res.status(200).json({ searchString: generatedSearchString });
   } catch (error) {
-    console.error('Error al generar cadena de búsqueda:', error.message);
-    res.status(500).json({ error: 'Error al procesar la solicitud.' });
+    console.error('Error al generar cadena de búsqueda:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 });
 

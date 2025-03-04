@@ -214,18 +214,18 @@ app.post('/api/research-questions', async (req, res) => {
 
   // Construir el prompt para OpenAI
   const prompt = `
-Eres un asistente experto en investigación académica. 
-Con base en la metodología "${methodology}", el título "${title}" y el objetivo "${objective}" ${investigationPart}
-genera ${questionsCount} preguntas de investigación en formato JSON. 
-Ejemplo de salida:
-{
-  "questions": [
-    "¿Cómo ha evolucionado el uso de la inteligencia artificial en la detección de enfermedades?",
-    "¿Qué impacto tienen los modelos de aprendizaje profundo en la precisión del diagnóstico médico?",
-    "Pregunta 3..."
-  ]
-}
-Devuelve únicamente el JSON sin ningún texto adicional.
+  Eres un asistente experto en investigación académica. 
+  Con base en la metodología "${methodology}", el título "${title}" y el objetivo "${objective}" ${investigationPart}
+  genera ${questionsCount} preguntas de investigación en formato JSON. 
+  Ejemplo de salida:
+  {
+    "questions": [
+      "¿Cómo ha evolucionado el uso de la inteligencia artificial en la detección de enfermedades?",
+      "¿Qué impacto tienen los modelos de aprendizaje profundo en la precisión del diagnóstico médico?",
+      "Pregunta 3..."
+    ]
+  }
+  Devuelve únicamente el JSON sin ningún texto adicional.
   `;
 
   try {
@@ -501,6 +501,364 @@ app.post('/api/generate-data-extraction-questions', async (req, res) => {
   }
 });
 
+
+
+
+
+// Ruta para generar la Introducción
+app.post('/api/generate-introduction', async (req, res) => {
+  const {
+    title,
+    description,
+    objective,
+    area_conocimiento,
+    tipo_investigacion
+  } = req.body;
+
+  if (!title || !description || !objective) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (title, description, objective)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente información, genera un borrador de la sección de Introducción para un artículo científico:
+- Título de la revisión: ${title}
+- Descripción: ${description}
+- Objetivo: ${objective}
+- Área de Conocimiento: ${area_conocimiento || 'No especificado'}
+- Tipo de Investigación: ${tipo_investigacion || 'No especificado'}
+
+La Introducción debe presentar el contexto, la motivación y la relevancia del estudio, en un tono académico y formal.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ introduction: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar Trabajos Relacionados
+app.post('/api/generate-trabajos-relacionados', async (req, res) => {
+  const { title, keywords, criterios_seleccion, description } = req.body;
+
+  if (!title || !keywords || !criterios_seleccion) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (title, keywords, criterios_seleccion)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente información, genera un borrador de la sección de Trabajos Relacionados para un artículo científico:
+- Título de la revisión: ${title}
+- Palabras clave: ${keywords}
+- Criterios de selección: ${criterios_seleccion}
+- Descripción breve: ${description || 'No se proporcionó descripción adicional.'}
+
+Resume y analiza los estudios previos relevantes, enfatizando cómo aportan al conocimiento sobre el tema.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ trabajos_relacionados: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar Metodología
+app.post('/api/generate-metodologia', async (req, res) => {
+  const { methodology, alcance, bases_bibliograficas, framework } = req.body;
+
+  if (!methodology || !bases_bibliograficas || !framework) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (methodology, bases_bibliograficas, framework)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente información, genera un borrador de la sección de Metodología para un artículo científico:
+- Metodología de la revisión: ${methodology}
+- Alcance: ${alcance || 'No especificado'}
+- Gestión de bases bibliográficas: ${bases_bibliograficas}
+- Framework a utilizar: ${framework} (ej. PICO, PICOC, PICOTT, SPICE)
+
+Describe detalladamente el proceso de búsqueda, criterios de inclusión y exclusión, y métodos de evaluación de calidad, en un tono académico y formal.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en metodología de investigación.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ metodologia: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar Resultados
+app.post('/api/generate-resultados', async (req, res) => {
+  const { studies_data, extraction_responses } = req.body;
+
+  if (!studies_data || !extraction_responses) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (studies_data, extraction_responses)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente información, genera un borrador de la sección de Resultados para un artículo científico:
+- Datos de los estudios (aceptados, duplicados, rechazados): ${studies_data}
+- Respuestas de evaluación y extracción de datos: ${extraction_responses}
+
+Resume los hallazgos principales de la revisión sistemática, presentando estadísticas clave y patrones identificados en un tono académico.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en redacción académica y análisis de datos.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ resultados: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar Discusión
+app.post('/api/generate-discusion', async (req, res) => {
+  const { results_summary, literature_review } = req.body;
+
+  if (!results_summary || !literature_review) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (results_summary, literature_review)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente información, genera un borrador de la sección de Discusión para un artículo científico:
+- Resumen de resultados: ${results_summary}
+- Comparación con la literatura existente: ${literature_review}
+
+Analiza e interpreta los hallazgos, discutiendo sus implicaciones, limitaciones y posibles direcciones futuras en un tono académico.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en redacción académica y análisis crítico.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ discusion: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar Limitaciones
+app.post('/api/generate-limitaciones', async (req, res) => {
+  const { methodological_issues, search_limitations } = req.body;
+
+  if (!methodological_issues || !search_limitations) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (methodological_issues, search_limitations)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente información, genera un borrador de la sección de Limitaciones para un artículo científico:
+- Problemas metodológicos: ${methodological_issues}
+- Limitaciones de la búsqueda y selección de estudios: ${search_limitations}
+
+Describe de forma clara y concisa las limitaciones que afectan la interpretación de los resultados, en un tono académico.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ limitaciones: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar Conclusión
+app.post('/api/generate-conclusion', async (req, res) => {
+  const { summary_results, future_research } = req.body;
+
+  if (!summary_results || !future_research) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (summary_results, future_research)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente información, genera un borrador de la sección de Conclusión para un artículo científico:
+- Resumen de hallazgos: ${summary_results}
+- Recomendaciones para futuras investigaciones: ${future_research}
+
+Redacta un texto conciso y claro que resuma los aportes del estudio y sugiera futuras líneas de investigación, en un tono académico.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ conclusion: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
+// Ruta para generar Referencias
+app.post('/api/generate-referencias', async (req, res) => {
+  const { citations_list, format } = req.body; // format puede ser APA, IEEE, etc.
+
+  if (!citations_list || !format) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (citations_list, format)' });
+  }
+
+  try {
+    const prompt = `
+Utilizando la siguiente lista de citas: ${citations_list},
+genera una lista de referencias bibliográficas en formato ${format} para un artículo científico.
+Asegúrate de que el formato sea correcto y que cada referencia esté ordenada alfabéticamente.
+    `;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en redacción y formato de referencias bibliográficas.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    const generatedText = response.data.choices[0].message.content.trim();
+    res.status(200).json({ referencias: generatedText });
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
 
 // Inicia el servidor en localhost:3000
 app.listen(PORT, () => {

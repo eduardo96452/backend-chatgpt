@@ -79,7 +79,7 @@ app.post('/api/generate-objetive', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4', // Ajusta si usas otra versión
+        model: 'gpt-4-turbo', // Ajusta si usas otra versión
         messages: [
           { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
           { role: 'user', content: prompt }
@@ -167,7 +167,7 @@ No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valo
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [{ role: 'user', content: prompt }],
         temperature: 1.0
       },
@@ -233,7 +233,7 @@ app.post('/api/research-questions', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
           { role: 'user', content: prompt }
@@ -264,7 +264,6 @@ app.post('/api/research-questions', async (req, res) => {
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 });
-
 
 // Ruta para generar palabras clave y sinónimos
 app.post('/api/generate-keywords', async (req, res) => {
@@ -325,7 +324,7 @@ app.post('/api/generate-keywords', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en terminología científica y metodología de investigación.' },
           { role: 'user', content: prompt }
@@ -348,7 +347,6 @@ app.post('/api/generate-keywords', async (req, res) => {
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 });
-
 
 // Ruta para generar cadenas de búsqueda
 app.post('/api/generate-search-string', async (req, res) => {
@@ -391,7 +389,7 @@ La cadena de búsqueda debe estar formulada con cada término entre comillas, us
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en la generación de cadenas de búsqueda académicas.' },
           { role: 'user', content: prompt }
@@ -446,7 +444,7 @@ app.post('/api/generate-criteria', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en metodología científica.' },
           { role: 'user', content: prompt }
@@ -511,7 +509,7 @@ app.post('/api/generate-data-extraction-questions', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en metodología científica.' },
           { role: 'user', content: prompt }
@@ -539,6 +537,78 @@ app.post('/api/generate-data-extraction-questions', async (req, res) => {
     res.status(500).json({ error: 'Error al procesar la solicitud.' });
   }
 });
+
+// Ruta para generar sugerencias de extracción de datos
+app.post('/api/generate-extraction-suggestions', async (req, res) => {
+  const { url, questions } = req.body;
+  
+  if (!url || !questions || !Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ error: 'Debe proporcionar una URL y una lista de preguntas de extracción.' });
+  }
+  
+  try {
+    // Construir una cadena que enumere las preguntas y su tipo de respuesta.
+    const questionsText = questions.map((q, index) => 
+      `${index + 1}. ${q.pregunta} (Tipo: ${q.tipoRespuesta})`
+    ).join("\n");
+
+    // Construir el prompt para GPT-4.
+    const prompt = `
+Tienes la siguiente URL de un artículo científico:
+${url}
+
+Y las siguientes preguntas de extracción de datos:
+${questionsText}
+
+Para cada pregunta, proporciona una sugerencia de respuesta que se ajuste al tipo de respuesta indicado, sin explicaciones adicionales.
+
+Responde en formato JSON siguiendo este ejemplo:
+{
+  "suggestions": [
+    { "answer": "Respuesta sugerida para la pregunta 1" },
+    { "answer": "Respuesta sugerida para la pregunta 2" },
+    ...
+  ]
+}
+    `;
+
+    // Llamada a la API de OpenAI.
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4-turbo',
+        messages: [
+          { role: 'system', content: 'Eres un asistente experto en extracción de datos y en generar sugerencias precisas para investigaciones.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 1.0
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        }
+      }
+    );
+
+    // Extraer la respuesta de OpenAI.
+    const generatedContent = response.data.choices[0].message.content.trim();
+    let suggestions;
+    try {
+      // Intentar parsear la respuesta en JSON
+      suggestions = JSON.parse(generatedContent).suggestions;
+    } catch (e) {
+      // Si no se puede parsear, devolver el contenido crudo
+      suggestions = generatedContent;
+    }
+    
+    res.status(200).json({ suggestions });
+  } catch (error) {
+    console.error('Error al generar sugerencias de extracción:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+  }
+});
+
 
 
 
@@ -573,12 +643,12 @@ La Introducción debe presentar el contexto, la motivación y la relevancia del 
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7
+        temperature: 1.0
       },
       {
         headers: {

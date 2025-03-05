@@ -324,7 +324,7 @@ app.post('/api/generate-keywords', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4-turbo',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en terminología científica y metodología de investigación.' },
           { role: 'user', content: prompt }
@@ -389,7 +389,7 @@ La cadena de búsqueda debe estar formulada con cada término entre comillas, us
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4-turbo',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en la generación de cadenas de búsqueda académicas.' },
           { role: 'user', content: prompt }
@@ -509,7 +509,7 @@ app.post('/api/generate-data-extraction-questions', async (req, res) => {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4-turbo',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: 'Eres un asistente experto en metodología científica.' },
           { role: 'user', content: prompt }
@@ -538,7 +538,6 @@ app.post('/api/generate-data-extraction-questions', async (req, res) => {
   }
 });
 
-// Ruta para generar sugerencias de extracción de datos
 app.post('/api/generate-extraction-suggestions', async (req, res) => {
   const { url, questions } = req.body;
   
@@ -581,7 +580,7 @@ Responde en formato JSON siguiendo este ejemplo:
           { role: 'system', content: 'Eres un asistente experto en extracción de datos y en generar sugerencias precisas para investigaciones.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 1.0
+        temperature: 0.7
       },
       {
         headers: {
@@ -648,7 +647,7 @@ La Introducción debe presentar el contexto, la motivación y la relevancia del 
           { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 1.0
+        temperature: 0.7
       },
       {
         headers: {
@@ -665,6 +664,13 @@ La Introducción debe presentar el contexto, la motivación y la relevancia del 
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 });
+
+
+
+
+
+
+
 
 // Ruta para generar Trabajos Relacionados
 app.post('/api/generate-trabajos-relacionados', async (req, res) => {

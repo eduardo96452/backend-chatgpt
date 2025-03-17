@@ -6,12 +6,20 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const objectivesRoutes = require('./routes/objectives');
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// Ruta para manejar solicitudes para el objetivo
+// Aquí ya debe existir la constante objectivesRoutes
+app.use('/api', objectivesRoutes);
+
+
+
+
+
+/* Ruta para manejar solicitudes para el objetivo
 app.post('/api/generate-objetive', async (req, res) => {
   const {
     title,
@@ -101,7 +109,7 @@ app.post('/api/generate-objetive', async (req, res) => {
     console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
     res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
-});
+});*/
 
 // Ruta para manejar solicitudes para la metodología de estructura
 app.post('/api/methodology-structure', async (req, res) => {
@@ -538,6 +546,8 @@ app.post('/api/generate-data-extraction-questions', async (req, res) => {
   }
 });
 
+
+// Ruta para generar sugerencias de extracción de datos
 app.post('/api/generate-extraction-suggestions', async (req, res) => {
   const { url, questions } = req.body;
   
@@ -977,5 +987,5 @@ Asegúrate de que el formato sea correcto y que cada referencia esté ordenada a
 
 // Inicia el servidor en localhost:3000
 app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+  console.log(`Servidor escuchando en el puerto ${PORT}`);
 });

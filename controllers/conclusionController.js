@@ -23,7 +23,7 @@ Redacta un texto conciso y claro que resuma los aportes del estudio y sugiera fu
       { role: 'user', content: prompt }
     ];
 
-    let generatedText = await callOpenAI(messages, 'gpt-4', 0.7);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     res.status(200).json({ conclusion: generatedText });

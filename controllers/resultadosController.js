@@ -25,7 +25,7 @@ Resume los hallazgos principales de la revisión sistemática, presentando estad
     ];
 
     // Llamar al servicio de OpenAI
-    let generatedText = await callOpenAI(messages, 'gpt-4', 0.7);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     res.status(200).json({ resultados: generatedText });

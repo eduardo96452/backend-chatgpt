@@ -29,7 +29,7 @@ La Introducción debe presentar el contexto, la motivación y la relevancia del 
     ];
 
     // Llamar al servicio centralizado
-    let generatedText = await callOpenAI(messages, 'gpt-4-turbo', 0.7);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     res.status(200).json({ introduction: generatedText });

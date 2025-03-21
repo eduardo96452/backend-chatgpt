@@ -40,7 +40,7 @@ Responde en formato JSON siguiendo este ejemplo:
     ];
 
     // Llamar al servicio de OpenAI
-    let generatedContent = await callOpenAI(messages, 'gpt-4-turbo', 0.7);
+    let generatedContent = await callOpenAI(messages);
     generatedContent = generatedContent.trim();
     
     let suggestions;

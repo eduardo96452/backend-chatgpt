@@ -42,7 +42,7 @@ async function generateDataExtractionQuestions(req, res) {
     ];
 
     // Llamar al servicio de OpenAI
-    let generatedText = await callOpenAI(messages, 'gpt-4', 1.0);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     // Intentar parsear la respuesta como un arreglo JSON válido

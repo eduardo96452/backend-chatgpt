@@ -20,7 +20,7 @@ Asegúrate de que el formato sea correcto y que cada referencia esté ordenada a
       { role: 'user', content: prompt }
     ];
 
-    let generatedText = await callOpenAI(messages, 'gpt-4', 0.7);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     res.status(200).json({ referencias: generatedText });

@@ -22,7 +22,7 @@ Analiza e interpreta los hallazgos, discutiendo sus implicaciones, limitaciones 
       { role: 'user', content: prompt }
     ];
 
-    let generatedText = await callOpenAI(messages, 'gpt-4', 0.7);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     res.status(200).json({ discusion: generatedText });

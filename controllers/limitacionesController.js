@@ -24,7 +24,7 @@ Describe de forma clara y concisa las limitaciones que afectan la interpretació
       { role: 'user', content: prompt }
     ];
 
-    let generatedText = await callOpenAI(messages, 'gpt-4', 0.7);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     res.status(200).json({ limitaciones: generatedText });

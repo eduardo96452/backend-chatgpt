@@ -25,7 +25,7 @@ Resume y analiza los estudios previos relevantes, enfatizando cómo aportan al c
     ];
 
     // Llamada al servicio OpenAI con modelo gpt-4 y temperatura 0.7
-    let generatedText = await callOpenAI(messages, 'gpt-4', 0.7);
+    let generatedText = await callOpenAI(messages);
     generatedText = generatedText.trim();
 
     res.status(200).json({ trabajos_relacionados: generatedText });

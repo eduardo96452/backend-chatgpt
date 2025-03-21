@@ -1,12 +1,23 @@
 // controllers/keywordsController.js
 const { callOpenAI } = require('../services/openaiService');
 
+// Función para limpiar la respuesta de posibles delimitadores Markdown
+function cleanResponse(response) {
+  return response
+    .replace(/^```(json)?\n/, '')
+    .replace(/\n```$/, '')
+    .trim();
+}
+
 async function generateKeywords(req, res) {
   const { methodologyData } = req.body;
 
   if (!methodologyData || typeof methodologyData !== 'object') {
     return res.status(400).json({ error: 'Debe proporcionar un objeto con la metodología' });
   }
+
+  // Convertir el objeto de metodología a JSON formateado
+  const methodologyJSON = JSON.stringify(methodologyData, null, 2);
 
   // Construir el prompt detallado
   const prompt = `
@@ -51,7 +62,7 @@ async function generateKeywords(req, res) {
   No incluyas ningún texto adicional ni explicaciones.
   
   Metodología:
-  ${JSON.stringify(methodologyData, null, 2)}
+  ${methodologyJSON}
   `;
 
   try {
@@ -60,10 +71,18 @@ async function generateKeywords(req, res) {
       { role: 'user', content: prompt }
     ];
 
-    // Llamada al servicio OpenAI
-    const generatedText = await callOpenAI(messages);
-    // Se espera que la respuesta sea un JSON válido
-    const generatedKeywords = JSON.parse(generatedText.trim());
+    // Llamada al servicio OpenAI con modelo y temperatura opcionales
+    let generatedText = await callOpenAI(messages);
+    generatedText = cleanResponse(generatedText);
+
+    let generatedKeywords;
+    try {
+      generatedKeywords = JSON.parse(generatedText);
+    } catch (parseError) {
+      console.error('Error al parsear JSON:', parseError, 'Respuesta recibida:', generatedText);
+      return res.status(500).json({ error: 'La respuesta de OpenAI no es un JSON válido.' });
+    }
+
     res.status(200).json({ keywords: generatedKeywords });
   } catch (error) {
     console.error('Error al generar palabras clave:', error.response?.data || error.message);

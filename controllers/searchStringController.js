@@ -38,7 +38,10 @@ Sin embargo, la cadena final NO debe incluir la mención explícita del idioma.
 La cadena de búsqueda debe formarse con cada término entre comillas, utilizando "OR" para combinar sinónimos y "AND" para unir grupos de términos.
 Asegúrate de que la cadena resultante sea insensible a mayúsculas, minúsculas y a la presencia o ausencia de tildes.
 Proporciona únicamente la cadena final sin explicaciones adicionales.
-  `;
+
+
+Genera la cadena de búsqueda final en ${idioma}.
+`;
 
   try {
     const messages = [

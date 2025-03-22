@@ -21,26 +21,26 @@ async function generateDataExtractionQuestions(req, res) {
 
   // Construcción del prompt para OpenAI
   const prompt = `
-      Eres un experto en revisiones sistemáticas de literatura.
-      Basado en el siguiente estudio:
-      - Título: ${title}
-      - Objetivo: ${objective}
+Eres un experto en revisiones sistemáticas de literatura.
+Basado en el siguiente estudio:
+- Título: ${title}
+- Objetivo: ${objective}
 
-      Genera un arreglo JSON con ${numberOfQuestions} preguntas de extracción de datos,
-      donde cada objeto incluya:
-      - "pregunta": la pregunta a realizar
-      - "tipo": un valor que puede ser "Booleano", "Texto", "Decimal", "Entero" o "Fecha"
+Genera un arreglo JSON con ${numberOfQuestions} preguntas de extracción de datos,
+donde cada objeto incluya:
+- "pregunta": la pregunta a realizar
+- "tipo": un valor que puede ser "Booleano", "Texto", "Decimal", "Entero" o "Fecha"
 
-      El formato debe ser exactamente:
-      [
-        { "pregunta": "Texto de la pregunta 1", "tipo": "Booleano" },
-        { "pregunta": "Texto de la pregunta 2", "tipo": "Texto" }
-        ...
-      ]
+El formato debe ser exactamente:
+[
+  { "pregunta": "Texto de la pregunta 1", "tipo": "Booleano" },
+  { "pregunta": "Texto de la pregunta 2", "tipo": "Texto" }
+  ...
+]
 
-      No incluyas explicaciones adicionales ni rodees la respuesta de texto extra;
-      solamente devuelve ese arreglo en JSON.
-  `;
+No incluyas explicaciones adicionales ni rodees la respuesta de texto extra;
+solamente devuelve ese arreglo en JSON.
+`;
 
   try {
     // Preparar los mensajes para la llamada a OpenAI
@@ -51,12 +51,12 @@ async function generateDataExtractionQuestions(req, res) {
 
     // Llamar al servicio de OpenAI
     let generatedText = await callOpenAI(messages);
-    generatedText = generatedText.trim();
+    const cleanedText = cleanResponse(generatedText);
 
     // Intentar parsear la respuesta como un arreglo JSON válido
     let generatedQuestions;
     try {
-      generatedQuestions = JSON.parse(generatedText);
+      generatedQuestions = JSON.parse(cleanedText);
     } catch (err) {
       console.error('Error al parsear JSON:', err);
       return res.status(500).json({ error: 'La respuesta no es un JSON válido' });

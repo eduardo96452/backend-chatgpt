@@ -1,6 +1,14 @@
 // controllers/criteriaController.js
 const { callOpenAI } = require('../services/openaiService');
 
+// Función para limpiar la respuesta de posibles delimitadores Markdown
+function cleanResponse(response) {
+  return response
+    .replace(/^```(json)?\n/, '')
+    .replace(/\n```$/, '')
+    .trim();
+}
+
 async function generateCriteria(req, res) {
   const { title, objective } = req.body;
 

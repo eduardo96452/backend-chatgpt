@@ -1,6 +1,14 @@
 // controllers/dataExtractionController.js
 const { callOpenAI } = require('../services/openaiService');
 
+// Función para limpiar la respuesta de posibles delimitadores Markdown
+function cleanResponse(response) {
+  return response
+    .replace(/^```(json)?\n/, '')
+    .replace(/\n```$/, '')
+    .trim();
+}
+
 async function generateDataExtractionQuestions(req, res) {
   const { title, objective, numberOfQuestions } = req.body;
 

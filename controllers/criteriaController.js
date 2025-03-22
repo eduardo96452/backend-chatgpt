@@ -44,12 +44,12 @@ async function generateCriteria(req, res) {
 
     // Llamar al servicio OpenAI
     let generatedText = await callOpenAI(messages);
-    generatedText = generatedText.trim();
+    const cleanedText = cleanResponse(generatedText);
 
     // Intentar parsear la respuesta como JSON
     let parsedCriteria;
     try {
-      parsedCriteria = JSON.parse(generatedText);
+      parsedCriteria = JSON.parse(cleanedText);
     } catch (err) {
       console.error('Error al parsear JSON:', err);
       return res.status(500).json({ error: 'La respuesta no es un JSON válido' });

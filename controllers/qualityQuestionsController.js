@@ -1,14 +1,6 @@
 // controllers/qualityQuestionsController.js
 const { callOpenAI } = require('../services/openaiService');
 
-// Función para limpiar la respuesta de posibles delimitadores Markdown
-function cleanResponse(response) {
-  return response
-    .replace(/^```(json)?\n/, '')
-    .replace(/\n```$/, '')
-    .trim();
-}
-
 async function generateQualityQuestions(req, res) {
   const { title, objective } = req.body;
 
@@ -47,10 +39,10 @@ No incluyas texto adicional ni explicaciones, solo el JSON.
       { role: 'user', content: prompt }
     ];
 
-    const rawResponse = await callOpenAI(messages, 'gpt-4', 0.7);
-    const cleanedResponse = cleanResponse(rawResponse);
+    const generatedText = await callOpenAI(messages, 'gpt-4', 0.7);
+    const cleaned = generatedText.trim();
+    const parsed = JSON.parse(cleaned);
 
-    const parsed = JSON.parse(cleanedResponse);
     res.status(200).json(parsed);
   } catch (error) {
     console.error('Error al generar preguntas de calidad:', error.response?.data || error.message);

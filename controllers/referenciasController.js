@@ -2,21 +2,58 @@
 const { callOpenAI } = require('../services/openaiService');
 
 async function generateReferencias(req, res) {
-  const { citations_list, format } = req.body; // 'format' puede ser APA, IEEE, etc.
+  const {
+    introduction,
+    trabajos_relacionados,
+    metodologia,
+    resultados,
+    format
+  } = req.body;
 
-  if (!citations_list || !format) {
-    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (citations_list, format)' });
+  // Establecer un formato por defecto "IEEE" si no se envía nada
+  const chosenFormat = format || 'IEEE';
+
+  // Validar campos obligatorios
+  if (!introduction && !trabajos_relacionados && !metodologia && !resultados) {
+    return res.status(400).json({
+      error: 'Falta el contenido mínimo en la solicitud (introducción, trabajos_relacionados, metodologia, resultados, etc.)'
+    });
   }
 
+  // Construimos un texto que combine dichas secciones
+  const combinedText = `
+[Introducción]\n${introduction || 'Sin introducción.'}
+
+[Trabajos Relacionados]\n${trabajos_relacionados || 'Sin trabajos relacionados.'}
+
+[Metodología]\n${metodologia || 'Sin metodología.'}
+
+[Resultados]\n${resultados || 'Sin resultados.'}
+  `;
+
+  // Prompt para OpenAI
   const prompt = `
-Utilizando la siguiente lista de citas: ${citations_list},
-genera una lista de referencias bibliográficas en formato ${format} para un artículo científico.
-Asegúrate de que el formato sea correcto y que cada referencia esté ordenada alfabéticamente.
+Eres un asistente experto en la generación de referencias bibliográficas verdaderas.
+Basándote en el siguiente contenido (introducción, trabajos relacionados, metodología y resultados):
+${combinedText}
+
+Busca y genera un listado de referencias bibliográficas con artículos REALES, 
+relevantes y actuales para sustentar las ideas que aparecen en el texto.
+Debes usar el formato ${chosenFormat}, y ordenarlas alfabéticamente.
+Asegúrate de que cada referencia sea legítima, incluyendo todos los campos requeridos 
+por el estilo ${chosenFormat} (autores, título, revista o editorial, año, etc.).
+Si no tienes suficiente información para generar una referencia concreta, 
+crea referencias aproximadas pero verosímiles.
   `;
 
   try {
     const messages = [
-      { role: 'system', content: 'Eres un asistente experto en redacción y formato de referencias bibliográficas.' },
+      {
+        role: 'system',
+        content:
+          'Eres un asistente experto en redacción y formato de referencias bibliográficas. ' +
+          'Tu tarea es crear referencias reales en el formato solicitado.'
+      },
       { role: 'user', content: prompt }
     ];
 
@@ -31,3 +68,4 @@ Asegúrate de que el formato sea correcto y que cada referencia esté ordenada a
 }
 
 module.exports = { generateReferencias };
+

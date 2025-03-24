@@ -22,7 +22,7 @@ const discussionRoutes = require('./routes/discussion');
 const limitacionesRoutes = require('./routes/limitaciones');
 const conclusionRoutes = require('./routes/conclusion');
 const referenciasRoutes = require('./routes/referencias');
-const metodologiaRoutes = require('./routes/routes/metodologiaSeccion');
+const metodologiaRoutes = require('./routes/metodologiaSeccion');
 
 // Middleware
 app.use(cors());

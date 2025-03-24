@@ -5,7 +5,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3005;
 const objectivesRoutes = require('./routes/objectives');
 const methodologyRoutes = require('./routes/methodology');
 const researchQuestionsRoutes = require('./routes/researchQuestions');
@@ -22,6 +22,7 @@ const discussionRoutes = require('./routes/discussion');
 const limitacionesRoutes = require('./routes/limitaciones');
 const conclusionRoutes = require('./routes/conclusion');
 const referenciasRoutes = require('./routes/referencias');
+const metodologiaRoutes = require('./routes/routes/metodologiaSeccion');
 
 // Middleware
 app.use(cors());
@@ -44,7 +45,7 @@ app.use('/api', discussionRoutes);
 app.use('/api', limitacionesRoutes);
 app.use('/api', conclusionRoutes);
 app.use('/api', referenciasRoutes);
-
+app.use('/api', metodologiaRoutes);
 
 // Inicia el servidor en localhost:3000
 app.listen(PORT, () => {

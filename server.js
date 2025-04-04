@@ -23,6 +23,7 @@ const limitacionesRoutes = require('./routes/limitaciones');
 const conclusionRoutes = require('./routes/conclusion');
 const referenciasRoutes = require('./routes/referencias');
 const metodologiaRoutes = require('./routes/metodologiaSeccion');
+const contactRoutes = require('./routes/contact');
 
 // Middleware
 app.use(cors());
@@ -46,6 +47,7 @@ app.use('/api', limitacionesRoutes);
 app.use('/api', conclusionRoutes);
 app.use('/api', referenciasRoutes);
 app.use('/api', metodologiaRoutes);
+app.use('/api', contactRoutes);
 
 // Inicia el servidor en localhost:3000
 app.listen(PORT, () => {

@@ -38,7 +38,7 @@ Lineamientos de redacción:
     ];
 
     // 👉 Se fuerza explícitamente el modelo gpt-4o
-    const generatedText = (await callOpenAI(messages, 'gpt-4o', 1.0)).trim();
+    const generatedText = (await callOpenAI(messages, 'gpt-4', 1.0)).trim();
 
     return res.status(200).json({ trabajos_relacionados: generatedText });
   } catch (error) {

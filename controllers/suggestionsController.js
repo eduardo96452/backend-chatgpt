@@ -73,35 +73,43 @@ async function generateExtractionSuggestions(req, res) {
       .map((q, i) => `${i + 1}. ${q.pregunta} (Tipo: ${q.tipoRespuesta})`)
       .join('\n');
 
-      const messages = [
-        { role: 'system',
-          content: 'Eres un asistente de extracción; responde solo con datos del texto. '
-                  + 'Si una respuesta no está, escribe exactamente "NO ENCONTRADO".' },
-        { role: 'user',
-          content: `
-      Título: ${title}
-      
-      Texto del artículo:
-      """${fullText}"""
-      
-      FORMATO DE RESPUESTA:
+    const messages = [
       {
-        "suggestions":[{"answer":"..."}, …]
-      }
-      
-      Ejemplo porcentual:
-      Pregunta: ¿Cuál fue la variación?
-      Tipo: Decimal
-      Respuesta correcta:
+        role: 'system',
+        content:
+          'Eres un asistente experto en extracción de datos. ' +
+          'Responde solo con la información del texto proporcionado.',
+      },
       {
-        "suggestions":[{"answer":"0.66 %"}]
-      }
-      
-      Preguntas reales:
-      ${qText}
-      `.trim() }
-      ];
-      
+        role: 'user',
+        content: `
+Título: ${title}
+
+Texto del artículo:
+"""${fullText}"""
+
+FORMATO DE RESPUESTA:
+{
+  "suggestions":[{"answer":"respuesta 1"}, …]
+}
+
+Ejemplo:
+Preguntas = [
+  {pregunta:"¿Año?",tipoRespuesta:"Entero"},
+  {pregunta:"¿Usa IA?",tipoRespuesta:"Booleano"}
+]
+Salida correcta =
+{
+  "suggestions":[
+    {"answer":2024},
+    {"answer":true}
+  ]
+}
+
+Preguntas reales:
+${qText}`.trim(),
+      },
+    ];
 
     /* 5. Llamar a OpenAI */
     const aiRaw = (await callOpenAI(messages)).trim();

@@ -48,23 +48,28 @@ Tipo de investigación: ${tipo_investigacion || 'No especificado'}
   ];
 
   try {
-    // Llama AL WRAPPER, no a “openai”
-    const aiRaw = await callOpenAI(
-      messages,
-      'gpt-4-turbo',  // modelo
-      0.3,            // temperature
-      1000            // max_tokens
-    );
+    let parsed;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const raw = await callOpenAI(messages);
+      try { parsed = JSON.parse(raw); } catch { continue; }
 
-    // Parseo y validaciones…
-    const parsed = JSON.parse(aiRaw);
-    return res.json({
+      const len = parsed.introduction.length;
+      if (len >= 3900 && len <= 4100) break;   // OK
+      parsed = undefined;                      // fuerza reintento
+    }
+    if (!parsed) {
+      return res.status(502).json({ error: 'OpenAI no respetó el formato tras 3 intentos.' });
+    }
+
+    /* Devuelve referencias unidas por <br> para el div editable */
+    res.json({
       introduction: parsed.introduction,
       references  : parsed.references.join('<br>')
     });
-  } catch (err) {
-    console.error('Error al generar introducción:', err);
-    return res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error al generar introducción' });
   }
 }
 

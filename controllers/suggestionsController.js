@@ -1,32 +1,49 @@
 // controllers/suggestionsController.js
-const axios     = require('axios');
-const pdfParse  = require('pdf-parse');
+const axios    = require('axios');
+const pdfParse = require('pdf-parse');
 const { callOpenAI } = require('../services/openaiService');
 
-async function generateExtractionSuggestions(req, res) {
-  const { url, questions } = req.body;
+function tokenize(str) {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')       // quita tildes
+    .replace(/[^a-z0-9\s]/g, ' ')          // solo letras y números
+    .split(/\s+/)
+    .filter(w => w.length > 2 && w !== 'the' && w !== 'and');
+}
 
-  if (!url || !Array.isArray(questions) || !questions.length) {
-    return res.status(400).json({ error: 'Debe proporcionar URL y preguntas.' });
+async function generateExtractionSuggestions(req, res) {
+  const { url, title, questions } = req.body;
+
+  if (!url || !title || !Array.isArray(questions) || !questions.length) {
+    return res.status(400).json({ error: 'Se requieren url, title y questions.' });
   }
 
   try {
-    /* 1. Descargar PDF como ArrayBuffer */
+    /* 1. Descarga PDF */
     const pdfResp = await axios.get(url, { responseType: 'arraybuffer' });
 
-    /* 2. Extraer texto (pdf-parse) */
-    const parsed = await pdfParse(pdfResp.data);
-    let fullText = parsed.text || '';
+    /* 2. Extrae texto */
+    const parsed   = await pdfParse(pdfResp.data);
+    const fullText = (parsed.text || '').slice(0, 120_000);
 
-    /* 3. Recortar si es muy grande (máx ~120k caracteres ≈ 45 K tokens) */
-    const MAX_CHARS = 120_000;
-    if (fullText.length > MAX_CHARS) {
-      fullText = fullText.slice(0, MAX_CHARS);
+    /* 3. Verifica coincidencia con el título */
+    const titleWords = tokenize(title);
+    const textWords  = new Set(tokenize(fullText));
+
+    const matches = titleWords.filter(w => textWords.has(w)).length;
+    const ratio   = matches / titleWords.length;   // 0-1
+
+    if (ratio < 0.4) {   // menos del 40 % de coincidencia
+      return res.status(412).json({
+        error: 'El PDF no parece corresponder al título proporcionado.',
+      });
     }
 
-    /* 4. Construir prompt */
+    /* 4. Construye prompt para GPT */
     const qText = questions
-      .map((q, i) => `${i + 1}. ${q.pregunta}  (Tipo: ${q.tipoRespuesta})`)
+      .map((q, i) => `${i + 1}. ${q.pregunta} (Tipo: ${q.tipoRespuesta})`)
       .join('\n');
 
     const messages = [
@@ -34,47 +51,34 @@ async function generateExtractionSuggestions(req, res) {
         role: 'system',
         content:
           'Eres un asistente experto en extracción de datos. ' +
-          'Responde solo con la información que encuentres en el texto proporcionado.',
+          'Responde solo con la información del artículo proporcionado.',
       },
       {
         role: 'user',
         content: `
-Texto del artículo (puede estar truncado):
+Título del artículo: ${title}
+
+Texto del artículo:
 """${fullText}"""
 
-Responde cada pregunta con una frase corta acorde al tipo indicado.
-Devuelve JSON EXACTAMENTE con esta forma:
-
+Responde las preguntas de forma breve y devuelve JSON:
 {
-  "suggestions":[
-    {"answer":"respuesta 1"},
-    {"answer":"respuesta 2"},
-    ...
-  ]
+  "suggestions":[{"answer":"..."}, …]
 }
 
 Preguntas:
-${qText}
-        `.trim(),
+${qText}`.trim(),
       },
     ];
 
-    /* 5. Llamar a OpenAI */
-    const aiResponse = await callOpenAI(messages);
-
-    /* 6. Intentar parsear la respuesta como JSON */
-    let suggestions;
-    try {
-      suggestions = JSON.parse(aiResponse).suggestions;
-    } catch (e) {
-      console.error('No se pudo parsear JSON, respuesta cruda:', aiResponse);
-      return res.status(500).json({ error: 'OpenAI devolvió un formato inválido.' });
-    }
+    /* 5. Llama a OpenAI y devuelve sugerencias */
+    const aiRaw = await callOpenAI(messages);
+    const suggestions = JSON.parse(aiRaw).suggestions;
 
     res.json({ suggestions });
   } catch (err) {
-    console.error('Fallo en extracción:', err.message);
-    res.status(500).json({ error: 'Error procesando PDF.' });
+    console.error(err);
+    res.status(500).json({ error: 'Error procesando PDF o OpenAI.' });
   }
 }
 

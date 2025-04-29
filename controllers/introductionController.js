@@ -1,4 +1,3 @@
-// controllers/introductionController.js
 const { callOpenAI } = require('../services/openaiService');
 
 async function generateIntroduction(req, res) {
@@ -7,69 +6,62 @@ async function generateIntroduction(req, res) {
     area_conocimiento, tipo_investigacion
   } = req.body;
 
-  /* ── PROMPT ─────────────────────────────────────────────── */
+  // (aquí tu prompt como antes, con instrucciones de tokens, párrafos, etc.)
   const prompt = `
 Genera **exactamente** el siguiente JSON, sin texto adicional:
-
 {
   "introduction": "<cuerpo>",
-  "references": [
-    "<Referencia APA 1>",
-    "<Referencia APA 2>",
-    "<Referencia APA 3>",
-    "<Referencia APA 4>"
-  ]
+  "references": ["<APA1>", "<APA2>", "<APA3>", "<APA4>"]
 }
-
 Reglas para "introduction":
- • Longitud total 3 900 o 4 100 caracteres.
- • Divide en párrafos (2 o 3 oraciones c/u).
- • Incluye marcadores IEEE [1], [2], … únicos y ascendentes.
- • Tono académico-formal.
- • **Limita tu salida a un máximo de 1 000 tokens.**
- • Concluye con el párrafo:
-   “Este documento se organizó de la siguiente manera: en la sección 2 se abordó los trabajos relacionados, en la sección 3 se presentó la metodología, en la sección 4 se establecieron los resultados, en la sección 5 se desarrolló la discusión, en la sección 6 se describieron las limitaciones y en la sección 7 se detallaron las conclusiones.”
-
+- Longitud 3 900–4 100 caracteres.
+- Párrafos de 2–3 oraciones.
+- Marcadores IEEE [1], [2],…
+- Tono académico-formal.
+- Máximo 1 000 tokens.
+- Concluye con el párrafo:
+  “Este documento se organizó de la siguiente manera: en la sección 2… sección 7…”
 Reglas para "references":
-• Devuelve 5 o 6 referencias **reales** en formato **APA 7**.
-
-Datos para redactar:
+- 4–6 referencias reales en APA 7.
+Datos:
 Título: ${title}
 Descripción: ${description}
 Objetivo: ${objective}
-Área de conocimiento: ${area_conocimiento || 'No especificado'}
+Área: ${area_conocimiento || 'No especificado'}
 Tipo de investigación: ${tipo_investigacion || 'No especificado'}
 `;
 
-  /* ── LLAMADA A OPENAI ───────────────────────────────────── */
   const messages = [
     { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
     { role: 'user',   content: prompt }
   ];
 
   try {
-    let parsed;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const raw = await callOpenAI(messages);
-      try { parsed = JSON.parse(raw); } catch { continue; }
+    // 1) Llamada única a OpenAI
+    const aiRaw = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 1000);
 
-      const len = parsed.introduction.length;
-      if (len >= 3900 && len <= 4100) break;   // OK
-      parsed = undefined;                      // fuerza reintento
-    }
-    if (!parsed) {
-      return res.status(502).json({ error: 'OpenAI no respetó el formato tras 3 intentos.' });
+    // 2) Limpieza de fences ```json … ```
+    let cleaned = aiRaw.trim();
+    if (cleaned.startsWith('```')) {
+      const m = cleaned.match(/```(?:json)?\s*([\s\S]*?)```$/i);
+      if (m) cleaned = m[1].trim();
     }
 
-    /* Devuelve referencias unidas por <br> para el div editable */
-    res.json({
+    // 3) Intento de parseo
+    const parsed = JSON.parse(cleaned);
+
+    // 4) Respuesta al cliente
+    return res.json({
       introduction: parsed.introduction,
       references  : parsed.references.join('<br>')
     });
 
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Error al generar introducción' });
+  } catch (err) {
+    console.error('Error al generar introducción:', err);
+    // Si JSON.parse falla o callOpenAI arroja, devolvemos 500 genérico
+    return res.status(500).json({
+      error: 'Error al procesar la introducción con OpenAI'
+    });
   }
 }
 

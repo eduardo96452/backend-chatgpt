@@ -7,7 +7,7 @@ async function generateTrabajosRelacionados(req, res) {
     return res.status(400).json({ error: 'Faltan datos obligatorios (title, keywords, criterios_seleccion).' });
   }
 
-  // Construir el prompt para OpenAI
+  // Prompt reforzado para referencias reales
   const prompt = `
 Genera **exactamente** este JSON, sin texto extra:
 
@@ -21,15 +21,16 @@ Genera **exactamente** este JSON, sin texto extra:
 }
 
 Reglas para "trabajos_relacionados":
-• Longitud total 6000 o 7000 caracteres (incluyendo espacios).  
-• Divide en párrafos de 2 o 3 oraciones cada uno.  
+• Longitud total 9000–10000 caracteres (incluyendo espacios).  
+• Divide en párrafos de 2–3 oraciones cada uno.  
 • Cada párrafo incluye al menos un marcador IEEE único y ascendente: [1], [2], …  
 • Tono académico-formal, prosa continua (sin encabezados).  
-• Debes usar hasta **9000 tokens** para esta generación.  
+• Puedes usar hasta **9000 tokens**.
 
 Reglas para "references":
-• Debes devolver una referencia APA 7 **por cada marcador IEEE** presente en el texto (si citaste hasta [15], devuelve 15 entradas reales).  
-• Formato APA 7 realista y ordenadas numéricamente (la entrada 1 corresponde a [1], la 2 a [2], etc.).
+• Debes devolver **exactamente** una referencia en formato APA 7 por cada marcador IEEE.  
+• **Usa SOLO referencias reales**: artículos publicados en revistas indexadas o conferencias reconocidas, con autor(es), año, título, revista y volúmen/páginas correctos.  
+• Orden numérico: la primera referencia corresponde a [1], la segunda a [2], etc.
 
 Datos para contextualizar:
 Título: ${title}
@@ -39,32 +40,30 @@ Descripción breve: ${description || 'No proporcionada.'}
 `;
 
   const messages = [
-    { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
+    { role: 'system', content: 'Eres un asistente experto en redacción académica y gestión de referencias.' },
     { role: 'user',   content: prompt }
   ];
 
   try {
-    // Llamada a OpenAI con límite de tokens elevado
+    // Llamada con mayor tope de tokens
     let raw = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 10000);
     raw = raw.trim();
 
-    // Quitar fences Markdown si los hubiera
+    // Limpieza de fences Markdown
     if (raw.startsWith('```')) {
       const m = raw.match(/```(?:json)?\s*([\s\S]*?)```$/i);
       if (m) raw = m[1].trim();
     }
 
-    // Parseo
+    // Intento de parseo
     let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
       console.error('Error parseando JSON de IA:', e);
-      // Si falla, devolvemos el body completo y dejamos referencias vacío
       return res.json({ trabajos_relacionados: raw, references: [] });
     }
 
-    // Responder
     return res.json({
       trabajos_relacionados: parsed.trabajos_relacionados,
       references           : parsed.references

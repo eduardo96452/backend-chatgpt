@@ -1,62 +1,80 @@
 // controllers/suggestionsController.js
+const axios     = require('axios');
+const pdfParse  = require('pdf-parse');
 const { callOpenAI } = require('../services/openaiService');
 
 async function generateExtractionSuggestions(req, res) {
   const { url, questions } = req.body;
-  
-  if (!url || !questions || !Array.isArray(questions) || questions.length === 0) {
-    return res.status(400).json({ error: 'Debe proporcionar una URL y una lista de preguntas de extracción.' });
+
+  if (!url || !Array.isArray(questions) || !questions.length) {
+    return res.status(400).json({ error: 'Debe proporcionar URL y preguntas.' });
   }
-  
+
   try {
-    // Construir una cadena que enumere las preguntas y su tipo de respuesta.
-    const questionsText = questions
-      .map((q, index) => `${index + 1}. ${q.pregunta} (Tipo: ${q.tipoRespuesta})`)
-      .join("\n");
+    /* 1. Descargar PDF como ArrayBuffer */
+    const pdfResp = await axios.get(url, { responseType: 'arraybuffer' });
 
-    // Construir el prompt para GPT-4.
-    const prompt = `
-Tienes la siguiente URL de un artículo científico:
-${url}
+    /* 2. Extraer texto (pdf-parse) */
+    const parsed = await pdfParse(pdfResp.data);
+    let fullText = parsed.text || '';
 
-Y las siguientes preguntas de extracción de datos:
-${questionsText}
+    /* 3. Recortar si es muy grande (máx ~120k caracteres ≈ 45 K tokens) */
+    const MAX_CHARS = 120_000;
+    if (fullText.length > MAX_CHARS) {
+      fullText = fullText.slice(0, MAX_CHARS);
+    }
 
-Para cada pregunta, proporciona una sugerencia de respuesta que se ajuste al tipo de respuesta indicado, sin explicaciones adicionales.
-
-Responde en formato JSON siguiendo este ejemplo:
-{
-  "suggestions": [
-    { "answer": "Respuesta sugerida para la pregunta 1" },
-    { "answer": "Respuesta sugerida para la pregunta 2" }
-    // ...
-  ]
-}
-    `;
+    /* 4. Construir prompt */
+    const qText = questions
+      .map((q, i) => `${i + 1}. ${q.pregunta}  (Tipo: ${q.tipoRespuesta})`)
+      .join('\n');
 
     const messages = [
-      { role: 'system', content: 'Eres un asistente experto en extracción de datos y en generar sugerencias precisas para investigaciones.' },
-      { role: 'user', content: prompt }
+      {
+        role: 'system',
+        content:
+          'Eres un asistente experto en extracción de datos. ' +
+          'Responde solo con la información que encuentres en el texto proporcionado.',
+      },
+      {
+        role: 'user',
+        content: `
+Texto del artículo (puede estar truncado):
+"""${fullText}"""
+
+Responde cada pregunta con una frase corta acorde al tipo indicado.
+Devuelve JSON EXACTAMENTE con esta forma:
+
+{
+  "suggestions":[
+    {"answer":"respuesta 1"},
+    {"answer":"respuesta 2"},
+    ...
+  ]
+}
+
+Preguntas:
+${qText}
+        `.trim(),
+      },
     ];
 
-    // Llamar al servicio de OpenAI
-    let generatedContent = await callOpenAI(messages);
-    generatedContent = generatedContent.trim();
-    
+    /* 5. Llamar a OpenAI */
+    const aiResponse = await callOpenAI(messages);
+
+    /* 6. Intentar parsear la respuesta como JSON */
     let suggestions;
     try {
-      // Intentar parsear la respuesta como JSON
-      suggestions = JSON.parse(generatedContent).suggestions;
+      suggestions = JSON.parse(aiResponse).suggestions;
     } catch (e) {
-      console.error('Error al parsear JSON:', e);
-      // En caso de fallo, se devuelve el contenido crudo
-      suggestions = generatedContent;
+      console.error('No se pudo parsear JSON, respuesta cruda:', aiResponse);
+      return res.status(500).json({ error: 'OpenAI devolvió un formato inválido.' });
     }
-    
-    res.status(200).json({ suggestions });
-  } catch (error) {
-    console.error('Error al generar sugerencias de extracción:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+
+    res.json({ suggestions });
+  } catch (err) {
+    console.error('Fallo en extracción:', err.message);
+    res.status(500).json({ error: 'Error procesando PDF.' });
   }
 }
 

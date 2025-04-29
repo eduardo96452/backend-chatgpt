@@ -1,9 +1,11 @@
 // routes/trabajosRelacionados.js
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
+
+// Asegúrate de que esta ruta apunta donde realmente está tu controlador:
 const { generateTrabajosRelacionados } = require('../controllers/trabajosRelacionadosController');
 
-// Define el endpoint POST para generar Trabajos Relacionados
+// Ahora generateTrabajosRelacionados debe ser una función, no undefined
 router.post('/generate-trabajos-relacionados', generateTrabajosRelacionados);
 
 module.exports = router;

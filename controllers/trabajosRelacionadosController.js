@@ -3,52 +3,75 @@ const { callOpenAI } = require('../services/openaiService');
 
 async function generateTrabajosRelacionados(req, res) {
   const { title, keywords, criterios_seleccion, description } = req.body;
-
   if (!title || !keywords || !criterios_seleccion) {
-    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (title, keywords, criterios_seleccion)' });
+    return res.status(400).json({ error: 'Faltan datos obligatorios (title, keywords, criterios_seleccion).' });
   }
 
   // Construir el prompt para OpenAI
-const prompt = `
-Redacta la sección de trabajos relacionados de un artículo científico utilizando los datos proporcionados.
+  const prompt = `
+Genera **exactamente** este JSON, sin texto adicional:
 
-— Título de la revisión: ${title}
-— Palabras clave: ${keywords}
-— Criterios de selección: ${criterios_seleccion}
-— Descripción breve: ${description || 'No se proporcionó descripción adicional.'}
+{
+  "trabajos_relacionados": "<cuerpo en párrafos académicos>",
+  "references": [
+    "<APA 1>",
+    "<APA 2>",
+    "<APA 3>",
+    "<APA 4>"
+  ]
+}
 
-Lineamientos de redacción:
+Reglas para "trabajos_relacionados":
+• Longitud total 7000–8000 caracteres (incluyendo espacios).  
+• Párrafos de 2–3 oraciones cada uno.  
+• Cada párrafo incluye al menos una cita IEEE única y ascendente: [1], [2], …  
+• Tono académico-formal y cohesivo (sin encabezados ni viñetas).  
+• Máximo 8000 tokens.
 
-1. No incluyas encabezados (“Trabajos relacionados” ni similares).  
-2. Tono académico y formal, en párrafos cohesivos (sin listas ni viñetas numeradas).  
-3. Resume y analiza los estudios previos más relevantes, explicando cómo aportan al conocimiento del tema.  
-4. **Cada párrafo debe contener al menos una cita en formato APA** dentro del cuerpo del texto, por ejemplo: (Smith & Jones, 2021) o (Fernández et al., 2020).  
-   - Usa autores y años reales o verosímiles; no inventes formatos extraños.  
-5. Al finalizar el análisis, agrega un bloque titulado “Referencias” que contenga la lista completa de las obras citadas, también en estilo APA (autor‑año, título, revista/libro, etc.).  
-   - Ordena las referencias alfabéticamente por apellido del primer autor.  
-6. Evita encabezados adicionales y no repitas citas ni números de sección.  
+Reglas para "references":
+• 4–6 referencias reales en formato APA 7, ordenadas alfabéticamente.
 
-El resultado debe incluir:  
-• Varias referencias APA insertadas in‑text a lo largo de los párrafos.  
-• Un bloque “Referencias” con las entradas correspondientes.  
-• Ningún otro encabezado o formato fuera de lo solicitado.
+Datos:
+Título: ${title}
+Palabras clave: ${keywords}
+Criterios de selección: ${criterios_seleccion}
+Descripción breve: ${description || 'No proporcionada.'}
 `;
 
+  const messages = [
+    { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
+    { role: 'user',   content: prompt }
+  ];
 
   try {
-    const messages = [
-      { role: 'system', content: 'Eres un asistente experto en redacción académica.' },
-      { role: 'user', content: prompt }
-    ];
+    // Llamada a OpenAI con límite de tokens
+    let raw = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 8000);
+    raw = raw.trim();
 
-    // Llamada al servicio OpenAI con modelo gpt-4 y temperatura 0.7
-    let generatedText = await callOpenAI(messages);
-    generatedText = generatedText.trim();
+    // Eliminar fences Markdown ```...``` si las incluye
+    if (raw.startsWith('```')) {
+      const m = raw.match(/```(?:json)?\s*([\s\S]*?)```$/i);
+      if (m) raw = m[1].trim();
+    }
 
-    res.status(200).json({ trabajos_relacionados: generatedText });
-  } catch (error) {
-    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+    // Intentar parsear JSON
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      // Si no es JSON válido, devolvemos el texto completo como cuerpo
+      return res.json({ trabajos_relacionados: raw, references: [] });
+    }
+
+    // Responder con los dos campos
+    return res.json({
+      trabajos_relacionados: parsed.trabajos_relacionados,
+      references           : parsed.references
+    });
+
+  } catch (err) {
+    console.error('Error al llamar a OpenAI:', err.response?.data || err.message);
+    return res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI.' });
   }
 }
 

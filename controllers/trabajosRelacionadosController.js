@@ -9,29 +9,29 @@ async function generateTrabajosRelacionados(req, res) {
 
   // Construir el prompt para OpenAI
   const prompt = `
-Genera **exactamente** este JSON, sin texto adicional:
+Genera **exactamente** este JSON, sin texto extra:
 
 {
   "trabajos_relacionados": "<cuerpo en párrafos académicos>",
   "references": [
     "<APA 1>",
     "<APA 2>",
-    "<APA 3>",
-    "<APA 4>"
+    // …
   ]
 }
 
 Reglas para "trabajos_relacionados":
-• Longitud total 7000–8000 caracteres (incluyendo espacios).  
-• Párrafos de 2–3 oraciones cada uno.  
-• Cada párrafo incluye al menos una cita IEEE única y ascendente: [1], [2], …  
-• Tono académico-formal y cohesivo (sin encabezados ni viñetas).  
-• Máximo 8000 tokens.
+• Longitud total 6000 o 7000 caracteres (incluyendo espacios).  
+• Divide en párrafos de 2 o 3 oraciones cada uno.  
+• Cada párrafo incluye al menos un marcador IEEE único y ascendente: [1], [2], …  
+• Tono académico-formal, prosa continua (sin encabezados).  
+• Debes usar hasta **9000 tokens** para esta generación.  
 
 Reglas para "references":
-• 4–6 referencias reales en formato APA 7, ordenadas alfabéticamente.
+• Debes devolver una referencia APA 7 **por cada marcador IEEE** presente en el texto (si citaste hasta [15], devuelve 15 entradas reales).  
+• Formato APA 7 realista y ordenadas numéricamente (la entrada 1 corresponde a [1], la 2 a [2], etc.).
 
-Datos:
+Datos para contextualizar:
 Título: ${title}
 Palabras clave: ${keywords}
 Criterios de selección: ${criterios_seleccion}
@@ -44,26 +44,27 @@ Descripción breve: ${description || 'No proporcionada.'}
   ];
 
   try {
-    // Llamada a OpenAI con límite de tokens
-    let raw = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 8000);
+    // Llamada a OpenAI con límite de tokens elevado
+    let raw = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 10000);
     raw = raw.trim();
 
-    // Eliminar fences Markdown ```...``` si las incluye
+    // Quitar fences Markdown si los hubiera
     if (raw.startsWith('```')) {
       const m = raw.match(/```(?:json)?\s*([\s\S]*?)```$/i);
       if (m) raw = m[1].trim();
     }
 
-    // Intentar parsear JSON
+    // Parseo
     let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
-      // Si no es JSON válido, devolvemos el texto completo como cuerpo
+      console.error('Error parseando JSON de IA:', e);
+      // Si falla, devolvemos el body completo y dejamos referencias vacío
       return res.json({ trabajos_relacionados: raw, references: [] });
     }
 
-    // Responder con los dos campos
+    // Responder
     return res.json({
       trabajos_relacionados: parsed.trabajos_relacionados,
       references           : parsed.references

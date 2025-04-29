@@ -14,23 +14,36 @@ function tokenize(str) {
     .filter(w => w.length > 2 && !['the', 'and'].includes(w));
 }
 function castAnswer(ans, tipo) {
+  ans = ans.toString().trim();
+
   if (tipo === 'Booleano') {
-    const t = ans.toString().toLowerCase();
+    const t = ans.toLowerCase();
     return t.includes('si') || t.includes('yes') || t === 'true';
   }
+
   if (tipo === 'Entero') {
     const n = parseInt(ans, 10);
     return Number.isFinite(n) ? n : null;
   }
+
   if (tipo === 'Decimal') {
-    const n = parseFloat(ans.toString().replace(',', '.'));
-    return Number.isFinite(n) ? n : null;
+    // Mantén el símbolo % si viene, pero convierte a número para tu lógica.
+    const num = parseFloat(ans.replace(',', '.'));
+    return ans.includes('%') ? `${num} %` : num;
   }
+
   if (tipo === 'Fecha') {
-    const m = ans.match(/(\d{4}-\d{2}-\d{2})/);
-    return m ? m[1] : null;
+    /* 1) intenta yyyy-mm-dd; 2) dd/mm/aaaa; 3) dd-mm-aaaa */
+    const ymd = ans.match(/(\d{4})-(\d{2})-(\d{2})/);
+    const dmy = ans.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    const dmy2 = ans.match(/(\d{2})-(\d{2})-(\d{4})/);
+
+    if (dmy)   return dmy[0];                       // dd/mm/aaaa
+    if (dmy2)  return dmy2[0].replace(/-/g,'/');    // dd/mm/aaaa
+    if (ymd)   return `${ymd[3]}/${ymd[2]}/${ymd[1]}`; // aaaa-mm-dd → dd/mm/aaaa
+    return null;
   }
-  return ans.toString().trim();       // Texto por defecto
+  return ans;      // Texto
 }
 
 /* ───────── controlador ───────── */
@@ -60,43 +73,35 @@ async function generateExtractionSuggestions(req, res) {
       .map((q, i) => `${i + 1}. ${q.pregunta} (Tipo: ${q.tipoRespuesta})`)
       .join('\n');
 
-    const messages = [
+      const messages = [
+        { role: 'system',
+          content: 'Eres un asistente de extracción; responde solo con datos del texto. '
+                  + 'Si una respuesta no está, escribe exactamente "NO ENCONTRADO".' },
+        { role: 'user',
+          content: `
+      Título: ${title}
+      
+      Texto del artículo:
+      """${fullText}"""
+      
+      FORMATO DE RESPUESTA:
       {
-        role: 'system',
-        content:
-          'Eres un asistente experto en extracción de datos. ' +
-          'Responde solo con la información del texto proporcionado.',
-      },
+        "suggestions":[{"answer":"..."}, …]
+      }
+      
+      Ejemplo porcentual:
+      Pregunta: ¿Cuál fue la variación?
+      Tipo: Decimal
+      Respuesta correcta:
       {
-        role: 'user',
-        content: `
-Título: ${title}
-
-Texto del artículo:
-"""${fullText}"""
-
-FORMATO DE RESPUESTA:
-{
-  "suggestions":[{"answer":"respuesta 1"}, …]
-}
-
-Ejemplo:
-Preguntas = [
-  {pregunta:"¿Año?",tipoRespuesta:"Entero"},
-  {pregunta:"¿Usa IA?",tipoRespuesta:"Booleano"}
-]
-Salida correcta =
-{
-  "suggestions":[
-    {"answer":2024},
-    {"answer":true}
-  ]
-}
-
-Preguntas reales:
-${qText}`.trim(),
-      },
-    ];
+        "suggestions":[{"answer":"0.66 %"}]
+      }
+      
+      Preguntas reales:
+      ${qText}
+      `.trim() }
+      ];
+      
 
     /* 5. Llamar a OpenAI */
     const aiRaw = (await callOpenAI(messages)).trim();

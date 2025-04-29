@@ -50,3 +50,5 @@ Tipo de Investigación: ${tipo_investigacion}
     res.status(500).json({ error: 'OpenAI format error.' });
   }
 }
+
+module.exports = { generateIntroduction };

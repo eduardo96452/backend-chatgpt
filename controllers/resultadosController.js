@@ -1,37 +1,107 @@
 // controllers/resultadosController.js
 const { callOpenAI } = require('../services/openaiService');
 
-async function generateResultados(req, res) {
-  const { studies_data, extraction_responses } = req.body;
+// Helper para obtener únicos según clave
+function uniqueBy(arr, keyFn) {
+  const seen = new Set();
+  return arr.filter(item => {
+    const key = keyFn(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
-  if (!studies_data || !extraction_responses) {
-    return res.status(400).json({ error: 'Faltan datos obligatorios en la solicitud (studies_data, extraction_responses)' });
+async function generateResultados(req, res) {
+  const { studies_data, extraction_data } = req.body;
+
+  if (!Array.isArray(studies_data) || !Array.isArray(extraction_data)) {
+    return res.status(400).json({
+      error: 'Faltan datos obligatorios (studies_data, extraction_data).'
+    });
   }
 
-  // Construir el prompt para OpenAI
-  const prompt = `
-Utilizando la siguiente información, genera un borrador de la sección de Resultados para un artículo científico:
-- Datos de los estudios (aceptados, duplicados, rechazados): ${studies_data}
-- Respuestas de evaluación y extracción de datos: ${extraction_responses}
+  const total      = studies_data.length;
+  const aceptados  = studies_data.filter(s => s.status === 'aceptado').length;
+  const rechazados = studies_data.filter(s => s.status === 'rechazado').length;
+  const duplicados = studies_data.filter(s => s.status === 'duplicado').length;
 
-Resume los hallazgos principales de la revisión sistemática, presentando estadísticas clave y patrones identificados en un tono académico.
-  `;
+  const porcentajeAceptados  = ((aceptados  / total) * 100).toFixed(1);
+  const porcentajeRechazados = ((rechazados / total) * 100).toFixed(1);
+  const porcentajeDuplicados = ((duplicados / total) * 100).toFixed(1);
+
+  // Preguntas únicas en orden de aparición
+  const preguntas = [...new Set(extraction_data.map(r => r.pregunta))];
+
+  // Referencias APA únicas de artículos aceptados
+  const refsAccepted = uniqueBy(
+    extraction_data.filter(r => studies_data.find(s => s.titulo === r.titulo && s.status === 'aceptado')),
+    r => r.titulo
+  );
+  const referenciasAPA = refsAccepted.map(r => {
+    const authorsAPA = r.autores.split(' and ').join(' & ');
+    return `${authorsAPA} (${r.anio}). ${r.titulo}. ${r.revista}. https://doi.org/${r.doi}`;
+  });
+
+  // Construcción dinámica de los bloques de preguntas
+  const bloquesPreguntas = preguntas.map(q => {
+    const respuestas = extraction_data
+      .filter(r => r.pregunta === q && studies_data.find(s => s.titulo === r.titulo && s.status === 'aceptado'))
+      .map(r => {
+        const authorsAPA = r.autores.split(' and ').join(' & ');
+        // Instrucción para cada párrafo: citar a los autores y luego analizar la respuesta
+        return `\`Para el artículo de ${authorsAPA} (${r.anio}), titulado "${r.titulo}", escribe un párrafo de 2–3 oraciones (600–900 caracteres) en tono académico-formal: primero explica brevemente el enfoque del artículo y luego analiza esta respuesta extraída: "${r.respuesta.replace(/"/g, '\\"')}".\``;
+      });
+    return `  "${q}": [
+    ${respuestas.join(',\n    ')}
+  ]`;
+  }).join(',\n');
+
+  const prompt = `
+Usa **solo** estos datos (no inventes nada) para generar **exactamente** este JSON:
+
+{
+  "reflexion_inicial": [
+    "<Párrafo 1 (2 oraciones). Resume la magnitud de la muestra: De un total de ${total} estudios, ${aceptados} fueron aceptados (${porcentajeAceptados} %), ${rechazados} rechazados (${porcentajeRechazados} %) y ${duplicados} duplicados (${porcentajeDuplicados} %). Concluye subrayando que el número de aceptados define la base de evidencia analizada.>",
+    "<Párrafo 2 (2–3 oraciones). Explica el propósito de la sección de resultados: presentar los hallazgos sintéticos para cada pregunta de investigación, destacando patrones comunes y discrepancias entre los artículos aceptados. Cierra afirmando que el análisis busca aportar claridad sobre la efectividad sobre el tema de investigación.>"
+    "<Párrafo 3 (1–2 oraciones). Señala que las subsecciones siguientes presentan el análisis detallado de los artículos aceptados, estructurado en torno a cada pregunta de investigación específica.>"
+  ],
+  
+${bloquesPreguntas},
+
+  "referencias": [
+    ${referenciasAPA.map(ref => `"${ref.replace(/"/g, '\\"')}"`).join(',\n    ')}
+  ]
+}
+
+— **Instrucciones**:
+1. **reflexion_inicial**:
+
+2. Para cada pregunta (clave):
+   - Genera un array de párrafos, uno por estudio aceptado.
+   - Cada párrafo debe tener **2–3 oraciones** y **600–900 caracteres**. que no tenga errores gramaticales ni de puntuación.
+   - Cita autores en formato APA (p.ej. Figueiredo & García-Peñalvo (2020)).
+   - Primero describe el enfoque del artículo en 1 oración, luego analiza la "respuesta" en otra oracion o mas oraciones.
+   - **No** inventes nada que no esté en los datos.
+3. **referencias**: lista APA de todos los artículos aceptados (autor, año, título, revista, DOI).
+4. Devuelve únicamente JSON válido, sin texto fuera del JSON.
+5. Puedes usar hasta **16000 tokens**.
+`;
 
   try {
-    // Preparar los mensajes para la llamada a OpenAI
     const messages = [
-      { role: 'system', content: 'Eres un asistente experto en redacción académica y análisis de datos.' },
-      { role: 'user', content: prompt }
+      { role: 'system', content: 'Eres un asistente experto en redacción académica y análisis de resultados de revisiones sistemáticas.' },
+      { role: 'user',   content: prompt }
     ];
 
-    // Llamar al servicio de OpenAI
-    let generatedText = await callOpenAI(messages);
-    generatedText = generatedText.trim();
+    const aiRaw = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 16000);
+    const clean = aiRaw.replace(/```json/g, '').replace(/```/g, '').trim();
+    const result = JSON.parse(clean);
 
-    res.status(200).json({ resultados: generatedText });
-  } catch (error) {
-    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+    return res.json(result);
+  } catch (err) {
+    console.error('Error generando Resultados:', err);
+    return res.status(500).json({ error: 'Error al procesar Resultados con OpenAI' });
   }
 }
 

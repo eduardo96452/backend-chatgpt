@@ -76,7 +76,8 @@ ${bloquesPreguntas},
 
 — **Instrucciones**:
 1. **reflexion_inicial**:
-
+  -Quita los signos “\< … >” de los párrafos finales (sólo se usan como marcador en este prompt).
+  - Devuelve los 3 párrafos en un único string, separados por **doble salto de línea** (usa “\\n\\n”).
 2. Para cada pregunta (clave):
    - Genera un array de párrafos, uno por estudio aceptado.
    - Cada párrafo debe tener **2–3 oraciones** y **600–900 caracteres**. que no tenga errores gramaticales ni de puntuación.

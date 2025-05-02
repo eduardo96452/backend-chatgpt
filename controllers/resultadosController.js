@@ -21,40 +21,45 @@ async function generateResultados(req, res) {
     });
   }
 
-  const total      = studies_data.length;
-  const aceptados  = studies_data.filter(s => s.status === 'aceptado').length;
-  const rechazados = studies_data.filter(s => s.status === 'rechazado').length;
-  const duplicados = studies_data.filter(s => s.status === 'duplicado').length;
+  console.log('studies_data:', studies_data);
+  console.log('extraction_data:', extraction_data);
 
-  const porcentajeAceptados  = ((aceptados  / total) * 100).toFixed(1);
+  // Totales
+  const total = studies_data.length;
+  const aceptados = studies_data.filter(s => s.status === 'Aceptado').length;
+  const rechazados = studies_data.filter(s => s.status === 'Rechazado').length;
+  const duplicados = studies_data.filter(s => s.status === 'Duplicado').length;
+
+  const porcentajeAceptados = ((aceptados / total) * 100).toFixed(1);
   const porcentajeRechazados = ((rechazados / total) * 100).toFixed(1);
   const porcentajeDuplicados = ((duplicados / total) * 100).toFixed(1);
 
-  // Preguntas únicas en orden de aparición
-  const preguntas = [...new Set(extraction_data.map(r => r.pregunta))];
+  // Preguntas únicas (en orden de aparición)
+  const preguntas = Array.from(new Set(extraction_data.map(r => r.pregunta)));
 
-  // Referencias APA únicas de artículos aceptados
-  const refsAccepted = uniqueBy(
-    extraction_data.filter(r => studies_data.find(s => s.titulo === r.titulo && s.status === 'aceptado')),
-    r => r.titulo
+  // Referencias APA de artículos aceptados (únicas por id_estudios)
+  const acceptedResponses = extraction_data.filter(r =>
+    studies_data.find(s => s.id_estudios === r.id_estudios && s.status === 'aceptado')
   );
-  const referenciasAPA = refsAccepted.map(r => {
+  const uniqueAccepted = uniqueBy(acceptedResponses, r => r.id_estudios);
+  const referenciasAPA = uniqueAccepted.map(r => {
     const authorsAPA = r.autores.split(' and ').join(' & ');
     return `${authorsAPA} (${r.anio}). ${r.titulo}. ${r.revista}. https://doi.org/${r.doi}`;
   });
 
-  // Construcción dinámica de los bloques de preguntas
+  // Construcción de bloques por pregunta
   const bloquesPreguntas = preguntas.map(q => {
     const respuestas = extraction_data
-      .filter(r => r.pregunta === q && studies_data.find(s => s.titulo === r.titulo && s.status === 'aceptado'))
+      .filter(r =>
+        r.pregunta === q &&
+        studies_data.find(s => s.id_estudios === r.id_estudios && s.status === 'aceptado')
+      )
       .map(r => {
         const authorsAPA = r.autores.split(' and ').join(' & ');
-        // Instrucción para cada párrafo: citar a los autores y luego analizar la respuesta
-        return `\`Para el artículo de ${authorsAPA} (${r.anio}), titulado "${r.titulo}", escribe un párrafo de 2–3 oraciones (600–900 caracteres) en tono académico-formal: primero explica brevemente el enfoque del artículo y luego analiza esta respuesta extraída: "${r.respuesta.replace(/"/g, '\\"')}".\``;
+        // Cada párrafo: cita autores, análisis de la respuesta
+        return `"Para el artículo de ${authorsAPA} (${r.anio}), titulado \\"${r.titulo}\\", escribe un párrafo de 2–3 oraciones (600–900 caracteres) en tono académico-formal: primero explica brevemente el enfoque del artículo y luego analiza esta respuesta extraída: \\"${r.respuesta.replace(/"/g, '\\"')}\\"."`;
       });
-    return `  "${q}": [
-    ${respuestas.join(',\n    ')}
-  ]`;
+    return `  "${q}": [\n    ${respuestas.join(',\n    ')}\n  ]`;
   }).join(',\n');
 
   const prompt = `
@@ -92,7 +97,7 @@ ${bloquesPreguntas},
   try {
     const messages = [
       { role: 'system', content: 'Eres un asistente experto en redacción académica y análisis de resultados de revisiones sistemáticas.' },
-      { role: 'user',   content: prompt }
+      { role: 'user', content: prompt }
     ];
 
     const aiRaw = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 16000);

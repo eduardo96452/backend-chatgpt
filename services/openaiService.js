@@ -3,9 +3,9 @@ const axios = require('axios');
 
 async function callOpenAI(
   messages,
-  model = 'gpt-4-turbo',    // o el que prefieras
+  model = 'gpt-4o-mini',    // o el que prefieras
   temperature = 0.3,
-  max_tokens = 5000         // añade este parámetro
+  max_tokens = 16000         // añade este parámetro
 ) {
   try {
     const body = {

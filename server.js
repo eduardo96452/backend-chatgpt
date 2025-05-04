@@ -21,7 +21,7 @@ const resultadosRoutes = require('./routes/resultados');
 const discussionRoutes = require('./routes/discussion');
 const limitacionesRoutes = require('./routes/limitaciones');
 const conclusionRoutes = require('./routes/conclusion');
-const referenciasRoutes = require('./routes/referencias');
+const resumenRoutes = require('./routes/resumen');
 const metodologiaRoutes = require('./routes/metodologiaSeccion');
 const contactRoutes = require('./routes/contact');
 
@@ -45,7 +45,7 @@ app.use('/api', resultadosRoutes);
 app.use('/api', discussionRoutes);
 app.use('/api', limitacionesRoutes);
 app.use('/api', conclusionRoutes);
-app.use('/api', referenciasRoutes);
+app.use('/api', resumenRoutes);
 app.use('/api', metodologiaRoutes);
 app.use('/api', contactRoutes);
 

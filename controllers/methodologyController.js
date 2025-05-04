@@ -69,37 +69,28 @@ No incluyas explicaciones ni texto adicional. Solo devuelve el JSON con los valo
 `;
 
   try {
-    // 1) Definir parámetros de la llamada
-    const model = 'gpt-4o-turbo';
-    const temperature = 0.3;
-    const maxTokens = 3000;
-
-    // 2) Construir los mensajes
+    // Uso del servicio para llamar a OpenAI
     const messages = [
       { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
       { role: 'user', content: prompt }
     ];
+    let structuredResponse = await callOpenAI(messages);
 
-    // 3) Llamada a OpenAI con los parámetros explícitos
-    let structuredResponse = await callOpenAI(messages, model, temperature, maxTokens);
-
-    // 4) Limpiar delimitadores Markdown (```json etc.)
+    // Limpiar la respuesta para remover delimitadores Markdown
     structuredResponse = cleanResponse(structuredResponse);
 
-    // 5) Parsear el JSON resultante
     let parsedData;
     try {
       parsedData = JSON.parse(structuredResponse);
-    } catch (err) {
-      console.error('Error al parsear JSON:', err);
+    } catch (error) {
+      console.error('Error al parsear JSON:', error);
       return res.status(500).json({ error: 'La respuesta no es un JSON válido' });
     }
 
-    // 6) Devolver la respuesta ya parseada
-    return res.json(parsedData);
+    res.status(200).json(parsedData);
   } catch (error) {
     console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
-    return res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
+    res.status(500).json({ error: 'Error al procesar la solicitud con OpenAI' });
   }
 }
 

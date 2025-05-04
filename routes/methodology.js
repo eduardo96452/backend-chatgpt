@@ -1,9 +1,9 @@
 // routes/metodologia.js
 const express = require('express');
-const router = express.Router();
-const { generateMetodologia } = require('../controllers/metodologiaController');
+const router  = express.Router();
+const { generateMethodologyStructure } = require('../controllers/methodologyController');
 
-// Esto coincide con tu componente
-router.post('/generate-metodologia', generateMetodologia);
+// Ruta nueva que use exactamente /api/methodology-structure
+router.post('/methodology-structure', generateMethodologyStructure);
 
 module.exports = router;

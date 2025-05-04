@@ -47,7 +47,7 @@ No incluyas texto adicional ni explicaciones, solo el JSON.
       { role: 'user', content: prompt }
     ];
 
-    const rawResponse = await callOpenAI(messages, 'gpt-4', 0.7);
+    const rawResponse = await callOpenAI(messages, 'gpt-4o-mini', 0.3, 6500);
     const cleanedResponse = cleanResponse(rawResponse);
 
     const parsed = JSON.parse(cleanedResponse);

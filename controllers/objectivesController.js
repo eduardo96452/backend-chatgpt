@@ -56,33 +56,6 @@ async function generateObjective(req, res) {
       4. No uses enumeraciones, viñetas ni explicaciones adicionales; la frase debe ser fluida y concisa.
       5. Asegúrate de que el texto sea redactado en un estilo académico, sin incluir listas o puntos.
     `;
-
-    // Opción A: Llamada directa a la API con axios:
-    /*const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-4-turbo',
-        messages: [
-          { role: 'system', content: 'Eres un asistente experto en investigación académica.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 1.0
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-        }
-      }
-    );
-
-    // Extraer la respuesta de OpenAI
-    const generatedObjective = response.data.choices[0].message.content.trim();
-
-    // Devolverla al cliente
-    res.status(200).json({ objective: generatedObjective });
-*/
-    // Opción B (usando el servicio):
     
     const messages = [
       { role: 'system', content: 'Eres un asistente experto en investigación académica.' },

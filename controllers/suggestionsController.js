@@ -88,6 +88,13 @@ Título: ${title}
 Texto del artículo:
 """${fullText}"""
 
+**Reglas para las respuestas:**
+1. Con base en la informacion que consta en el documento, responde a las preguntas de forma detallada y suficientemente explícita.
+2. Redacta sin omitir información relevante, pero evita ser redundante.
+3. Redacta un minimo de 150 palabras por pregunta.
+4. Si no hay información suficiente, responde de manera concisa, según con lo que consta en el documento.
+
+
 FORMATO DE RESPUESTA:
 {
   "suggestions":[{"answer":"respuesta 1"}, …]

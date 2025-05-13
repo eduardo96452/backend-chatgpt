@@ -75,7 +75,8 @@ async function generateResultados(req, res) {
 `;
     bloque.respuestas.forEach((r, j) => {
       const texto = 
-        `Para el artículo de ${r.autores} (${r.anio}), titulado \"${r.titulo}\" y publicado en ${r.revista}, escribe un párrafo de 3–4 oraciones en tono académico-formal: primero describe brevemente el enfoque del artículo y luego analiza la respuesta extraída: \"${r.respuesta.replace(/"/g, '\\"')}\".`;
+        `Para el artículo de ${r.autores} (${r.anio}), escribe un párrafo de 4–5 oraciones en tono académico-formal: 
+        primero describe brevemente el enfoque del artículo y luego presenta un detalle explicito con base en el siguiente texto: \"${r.respuesta.replace(/"/g, '\\"')}\".`;
       prompt += `    "${texto.replace(/"/g, '\\"')}"${j < bloque.respuestas.length - 1 ? ',' : ''}
 `;
     });
@@ -99,8 +100,9 @@ async function generateResultados(req, res) {
 1. No inventes nada. Usa solo los datos aquí proporcionados.
 2. Devuelve únicamente JSON válido.
 3. "reflexion_inicial" debe estar sin < > y sin saltos de línea extras.
-4. Cada pregunta debe generar un arreglo de párrafos (uno por respuesta), 3–4 oraciones, 600–900 caracteres.
-5. Las referencias ya están enumeradas; no cambies el orden ni crees nuevas.
+4. Cada pregunta debe generar un arreglo de párrafos (uno por respuesta de extracción), 4–5 oraciones.
+5. Si los criterios de varios autores son similares, puedes unirlos en un solo párrafo de 5-10 oraciones.
+6. Las referencias ya están enumeradas; no cambies el orden ni crees nuevas.
 `;
 
   try {

@@ -16,14 +16,17 @@ const qualityQuestionsRoutes = require('./routes/qualityQuestions');
 const dataExtractionRoutes = require('./routes/dataExtraction');
 const suggestionsRoutes = require('./routes/suggestions');
 const introductionRoutes = require('./routes/introduction');
+const introductionKeywordsRoutes = require('./routes/introductionkeywords');
 const trabajosRelacionadosRoutes = require('./routes/trabajosRelacionados');
 const resultadosRoutes = require('./routes/resultados');
 const discussionRoutes = require('./routes/discussion');
+const discussionkeywordsRoutes = require('./routes/discussionkeywords');
 const limitacionesRoutes = require('./routes/limitaciones');
 const conclusionRoutes = require('./routes/conclusion');
 const resumenRoutes = require('./routes/resumen');
 const metodologiaRoutes = require('./routes/metodologiaSeccion');
 const contactRoutes = require('./routes/contact');
+const trabajosRelacionadosKeywordsRoutes = require('./routes/trabaRelaKeywords');
 
 // Middleware
 app.use(cors());
@@ -40,14 +43,17 @@ app.use('/api', qualityQuestionsRoutes);
 app.use('/api', dataExtractionRoutes);
 app.use('/api', suggestionsRoutes);
 app.use('/api', introductionRoutes);
+app.use('/api', introductionKeywordsRoutes);
 app.use('/api', trabajosRelacionadosRoutes);
 app.use('/api', resultadosRoutes);
 app.use('/api', discussionRoutes);
+app.use('/api', discussionkeywordsRoutes);
 app.use('/api', limitacionesRoutes);
 app.use('/api', conclusionRoutes);
 app.use('/api', resumenRoutes);
 app.use('/api', metodologiaRoutes);
 app.use('/api', contactRoutes);
+app.use('/api', trabajosRelacionadosKeywordsRoutes);
 
 // Inicia el servidor en localhost:3000
 app.listen(PORT, () => {
